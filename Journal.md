@@ -226,6 +226,10 @@ agy completó su segunda ronda con:
   - `SERVO_SAVE_DEFLECT <sid>`: Guarda la posición actual como Deflexión.
   - `SET_DWELL <sid> <ms>`: Guarda el retardo de clasificación en la EEPROM para el servo especificado.
 
+### Actualización (OpenCode) - 2026-07-14 (detección SO + fix HC-05)
+- **`app.py`**: `action_connect()` ahora detecta el SO con `platform.system()`. En Windows prueba COM3/COM4 primero; en Linux/Termux prueba `/dev/rfcomm0`, `/dev/ttyUSB0` primero. TCP bridge como fallback.
+- **`docs/hc05-setup.md`**: Cambiado `AT+CMODE=0` → `AT+CMODE=1` (modo seguro sin `AT+BIND` dejaba el HC-05 sin conexión). Agregada nota explicativa.
+
 ### Actualización (OpenCode) - 2026-07-14 (Termux + TCP bridge)
 - **`docs/termux-setup.md`**: Guía completa para ejecutar TUI en Termux: instalación, 3 métodos de conexión BT (rfcomm root, Serial Bluetooth Terminal TCP bridge, USB-OTG), script de prueba y solución de problemas.
 - **`connect.py`**: Agregado `connect_tcp(host, port)` — conexión asíncrona por TCP para el puente Serial Bluetooth Terminal.

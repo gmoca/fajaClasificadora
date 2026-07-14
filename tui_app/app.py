@@ -8,6 +8,8 @@ from screens.config import ConfigScreen
 from screens.log_viewer import LogViewerScreen
 from screens.test_screen import TestScreen
 import asyncio
+import sys
+import platform
 
 class FajaApp(App):
     TITLE = "Faja Transportadora"
@@ -88,7 +90,15 @@ class FajaApp(App):
     async def action_connect(self, silent=False):
         if self.bt.connected:
             return
-        for port in ["/dev/rfcomm0", "/dev/ttyUSB0", "COM3"]:
+        is_windows = platform.system() == "Windows"
+        ports = [
+            "COM3" if is_windows else "/dev/rfcomm0",
+            "COM4" if is_windows else "/dev/ttyUSB0",
+            "/dev/rfcomm0" if is_windows else "COM3",
+            "/dev/ttyUSB0",
+            "COM5", "COM6",
+        ]
+        for port in ports:
             if await self.bt.connect(port):
                 if not silent:
                     self.notify(f"Conectado a {port}")

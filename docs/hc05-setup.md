@@ -64,9 +64,12 @@ AT+RESET
 | `AT+NAME=FajaClasificadora` | Nombre Bluetooth visible |
 | `AT+UART=115200,0,0` | Baud=115200, stop bits=1, parity=none |
 | `AT+ROLE=0` | Esclavo (el PIC es esclavo, el TUI es maestro) |
-| `AT+CMODE=0` | Conectar solo a dirección específica (seguro) |
-| `AT+BIND=<addr>` | (Opcional) Vincular a dirección MAC del maestro |
+| `AT+CMODE=1` | Modo de conexión: 1 = cualquier dispositivo (recomendado) |
 | `AT+RESET` | Reinicia y aplica cambios |
+
+> **Nota sobre `AT+CMODE`:**  
+> - `CMODE=1` (recomendado): cualquier maestro puede conectarse  
+> - `CMODE=0`: solo la dirección en `AT+BIND=<MAC>`. Si usas este, debes agregar `AT+BIND=<MAC_del_maestro>` ANTES de `AT+RESET`
 
 **`AT+UART=115200,0,0` es crítico** — el firmware del PIC está configurado a 115200. Si el HC-05 está en otro baud rate, no hay comunicación.
 
@@ -76,6 +79,7 @@ AT+RESET
 AT+NAME?
 AT+UART?
 AT+ROLE?
+AT+CMODE?
 AT+ADDR?
 ```
 
@@ -89,6 +93,8 @@ OK
 AT+UART=115200,0,0
 OK
 AT+ROLE=0
+OK
+AT+CMODE=1
 OK
 AT+RESET
 OK
