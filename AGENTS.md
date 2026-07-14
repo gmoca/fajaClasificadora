@@ -38,6 +38,24 @@ Source files tracked in `nbproject/configurations.xml` (add files there or via I
 - **Stack** — `-mstack=compiled:auto:auto:auto` eliminates hardware stack need, saves RAM.
 - **EEPROM race condition** — always `while (EECON1bits.WR);` before read or before clearing WREN after write (~4ms cycle).
 
+## PIC18F4550 Pinout (OBLIGATORIO — NO MODIFICAR)
+
+⚠️ **El PIC18F4550 NO es igual al PIC18F4520 ni al PIC16F877A.** En este chip, el USB ocupa `RC4`/`RC5`, y el MSSP (I2C) se reubicó a `PORTB`. Verificado en datasheet DS39632E y confirmado en simulación Proteus.
+
+| Función | Pin | Registro / Nota |
+|---------|-----|-----------------|
+| **I2C SDA** | **RB0** (pin 33) | `TRISB0=1` en `i2c.c` |
+| **I2C SCL** | **RB1** (pin 34) | `TRISB1=1` en `i2c.c` |
+| **E-stop** | **RB3** (pin 36) | Polling cada 1ms en TMR0 ISR (`system.c`) |
+| Encoder | RB2 (pin 35) | INT2, rising edge, baja prioridad |
+| Servo 1 | RC1 (pin 16) | CCP2 Compare mode |
+| Servo 2 | RC0 (pin 15) | Software PWM vía TMR3 ISR |
+| PWM H-bridge | RC2 (pin 17) | CCP1 PWM, 20kHz |
+| UART TX | RC6 (pin 25) | → HC-05 RX (divisor 1kΩ+2.2kΩ) |
+| UART RX | RC7 (pin 26) | ← HC-05 TX |
+| USB D- | RC4 (pin 23) | Transceptor USB (NO usar para I2C) |
+| USB D+ | RC5 (pin 24) | Transceptor USB (NO usar para I2C) |
+
 ## Conventions
 
 - C99 (`-std=c99`), dwarf-3, `-O0`, COFF+ELF hybrid output, no peripheral library linked.
