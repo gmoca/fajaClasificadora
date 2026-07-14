@@ -60,3 +60,10 @@ uint8_t i2c_read(uint8_t addr, uint8_t reg, uint8_t *buf, uint8_t len) {
     i2c_stop();
     return 1;
 }
+
+uint8_t i2c_probe(uint8_t addr) {
+    i2c_start();
+    uint8_t ack = i2c_write_byte(addr << 1 | 0);
+    i2c_stop();
+    return (ack == 0);
+}

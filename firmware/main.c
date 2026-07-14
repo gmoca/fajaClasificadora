@@ -20,6 +20,20 @@ void main(void) {
     
     calibration_init();
     i2c_init();
+
+    uart_send_str("Scanning I2C...\n");
+    for (uint8_t addr = 0x08; addr < 0x78; addr++) {
+        if (i2c_probe(addr)) {
+            uart_send_str("Found device at 0x");
+            char hex[5];
+            hex[0] = "0123456789ABCDEF"[addr >> 4];
+            hex[1] = "0123456789ABCDEF"[addr & 0x0F];
+            hex[2] = '\n';
+            hex[3] = '\0';
+            uart_send_str(hex);
+        }
+    }
+
     lcd_init();
 
     if (tcs34725_init()) {
