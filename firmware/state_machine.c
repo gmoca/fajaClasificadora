@@ -77,11 +77,123 @@ void state_machine_start(void) {
     lcd_print("RUNNING");
 }
 
+static uint16_t menu_s1_home = 90;
+static uint16_t menu_s1_defl = 0;
+static uint16_t menu_s1_dwell = 500;
+static uint16_t menu_s2_home = 90;
+static uint16_t menu_s2_defl = 0;
+static uint16_t menu_s2_dwell = 500;
+static uint16_t menu_ppr = 20;
+
+static uint8_t menu_index = 0;
+static uint8_t menu_active = 0;
+
+static void load_menu_values(void) {
+    menu_s1_home = calibration_read_word(EEPROM_ADDR_SERVO1_HOME);
+    menu_s1_defl = calibration_read_word(EEPROM_ADDR_SERVO1_DEFL);
+    menu_s1_dwell = calibration_read_word(EEPROM_ADDR_SERVO1_DWELL);
+    menu_s2_home = calibration_read_word(EEPROM_ADDR_SERVO2_HOME);
+    menu_s2_defl = calibration_read_word(EEPROM_ADDR_SERVO2_DEFL);
+    menu_s2_dwell = calibration_read_word(EEPROM_ADDR_SERVO2_DWELL);
+    menu_ppr = calibration_read_word(EEPROM_ADDR_ENC_PPR);
+}
+
+static void adjust_menu_value(int8_t dir) {
+    switch (menu_index) {
+        case 0:
+            if (dir > 0 && menu_s1_home < 180) menu_s1_home++;
+            if (dir < 0 && menu_s1_home > 0) menu_s1_home--;
+            servo_set_angle(1, menu_s1_home);
+            break;
+        case 1:
+            if (dir > 0 && menu_s1_defl < 180) menu_s1_defl++;
+            if (dir < 0 && menu_s1_defl > 0) menu_s1_defl--;
+            servo_set_angle(1, menu_s1_defl);
+            break;
+        case 2:
+            if (dir > 0 && menu_s1_dwell < 5000) menu_s1_dwell += 50;
+            if (dir < 0 && menu_s1_dwell > 50) menu_s1_dwell -= 50;
+            break;
+        case 3:
+            if (dir > 0 && menu_s2_home < 180) menu_s2_home++;
+            if (dir < 0 && menu_s2_home > 0) menu_s2_home--;
+            servo_set_angle(2, menu_s2_home);
+            break;
+        case 4:
+            if (dir > 0 && menu_s2_defl < 180) menu_s2_defl++;
+            if (dir < 0 && menu_s2_defl > 0) menu_s2_defl--;
+            servo_set_angle(2, menu_s2_defl);
+            break;
+        case 5:
+            if (dir > 0 && menu_s2_dwell < 5000) menu_s2_dwell += 50;
+            if (dir < 0 && menu_s2_dwell > 50) menu_s2_dwell -= 50;
+            break;
+        case 6:
+            if (dir > 0 && menu_ppr < 1000) menu_ppr++;
+            if (dir < 0 && menu_ppr > 1) menu_ppr--;
+            break;
+    }
+}
+
+static void save_current_menu_value(void) {
+    switch (menu_index) {
+        case 0: calibration_save_servo_home(1, menu_s1_home); break;
+        case 1: calibration_save_servo_deflect(1, menu_s1_defl); break;
+        case 2: calibration_save_servo_dwell(1, menu_s1_dwell); break;
+        case 3: calibration_save_servo_home(2, menu_s2_home); break;
+        case 4: calibration_save_servo_deflect(2, menu_s2_defl); break;
+        case 5: calibration_save_servo_dwell(2, menu_s2_dwell); break;
+        case 6: calibration_save_ppr(menu_ppr); break;
+    }
+}
+
+static void display_menu(void) {
+    lcd_set_cursor(0, 0);
+    lcd_print("CALIBRAR LOCAL  ");
+    lcd_set_cursor(0, 1);
+    
+    char val_str[8];
+    switch (menu_index) {
+        case 0:
+            lcd_print("S1 Home: ");
+            u16_to_str(val_str, menu_s1_home);
+            break;
+        case 1:
+            lcd_print("S1 Defl: ");
+            u16_to_str(val_str, menu_s1_defl);
+            break;
+        case 2:
+            lcd_print("S1 Dwell: ");
+            u16_to_str(val_str, menu_s1_dwell);
+            break;
+        case 3:
+            lcd_print("S2 Home: ");
+            u16_to_str(val_str, menu_s2_home);
+            break;
+        case 4:
+            lcd_print("S2 Defl: ");
+            u16_to_str(val_str, menu_s2_defl);
+            break;
+        case 5:
+            lcd_print("S2 Dwell: ");
+            u16_to_str(val_str, menu_s2_dwell);
+            break;
+        case 6:
+            lcd_print("Enc PPR: ");
+            u16_to_str(val_str, menu_ppr);
+            break;
+    }
+    lcd_print(val_str);
+    lcd_print("      ");
+}
+
 void state_machine_test_enter(void) {
     if (state != ST_IDLE) return;
     state = ST_TEST;
     pwm_hbridge_set_duty(0);
     gpio_hbridge_dir(HB_STOP);
+    last_bt_activity = system_ticks;
+    menu_active = 0;
     uart_send_str("STATE:test\n");
     lcd_clear();
     lcd_print("MODO TEST");
@@ -232,9 +344,60 @@ void state_machine_run(void) {
                 pwm_hbridge_set_duty(0);
                 gpio_hbridge_dir(HB_STOP);
             }
-            if (lcd_counter++ % 500 == 0) {
-                lcd_set_cursor(0, 1);
-                lcd_print("Test Activo  ");
+            
+            if (system_ticks - last_bt_activity > 5000) {
+                if (!menu_active) {
+                    menu_active = 1;
+                    menu_index = 0;
+                    load_menu_values();
+                    lcd_clear();
+                }
+                
+                // Debounced long-press and short-press logic
+                static uint32_t mode_press_start = 0;
+                static uint8_t mode_was_pressed = 0;
+                static uint8_t mode_long_pressed = 0;
+                
+                if (gpio_button_state(BTN_MODE)) {
+                    if (!mode_was_pressed) {
+                        mode_press_start = now;
+                        mode_was_pressed = 1;
+                        mode_long_pressed = 0;
+                    } else if (!mode_long_pressed && (now - mode_press_start > 1500)) {
+                        save_current_menu_value();
+                        lcd_clear();
+                        lcd_print("GUARDADO!");
+                        uint32_t delay_until = system_ticks + 800;
+                        while (system_ticks < delay_until);
+                        lcd_clear();
+                        mode_long_pressed = 1;
+                    }
+                } else {
+                    if (mode_was_pressed) {
+                        if (!mode_long_pressed && (now - mode_press_start > 50)) {
+                            menu_index = (menu_index + 1) % 7;
+                            lcd_clear();
+                        }
+                        mode_was_pressed = 0;
+                    }
+                }
+                
+                if (gpio_button_pressed(BTN_UP)) {
+                    adjust_menu_value(1);
+                }
+                if (gpio_button_pressed(BTN_DOWN)) {
+                    adjust_menu_value(-1);
+                }
+                
+                if (lcd_counter++ % 200 == 0) {
+                    display_menu();
+                }
+            } else {
+                menu_active = 0;
+                if (lcd_counter++ % 500 == 0) {
+                    lcd_set_cursor(0, 1);
+                    lcd_print("Test Activo  ");
+                }
             }
             break;
     }

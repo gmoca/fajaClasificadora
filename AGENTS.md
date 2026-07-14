@@ -4,9 +4,9 @@ MPLAB X IDE v6.30 project for **PIC18F4550** microcontroller, compiled with **XC
 
 ## Project state
 
-- Firmware completo, compila y linkea. **45.0% flash, 34.6% RAM**.
+- Firmware completo, compila y linkea. **56.0% flash, 42.7% RAM**.
 - TUI Python con Textual, 4 pantallas implementadas.
-- No es un repositorio git (aún).
+- Repositorio git: `https://github.com/gmoca/fajaClasificadora` (rama `master`).
 
 ## Reglas de sincronización para agentes (OpenCode + agy)
 

@@ -56,6 +56,10 @@ uint8_t gpio_button_pressed(button_t btn) {
     return ret;
 }
 
+uint8_t gpio_button_state(button_t btn) {
+    return (btn_state[btn] == 0);
+}
+
 void gpio_hbridge_dir(hbridge_dir_t dir) {
     switch (dir) {
         case HB_STOP: LATDbits.LATD0 = 0; LATDbits.LATD1 = 0; break;

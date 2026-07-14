@@ -6,17 +6,26 @@
 #include "calibration.h"
 #include "encoder.h"
 #include "gpio.h"
+#include "system.h"
 #include <string.h>
 #include <stdlib.h>
 
 static char cmd_buf[64];
 static uint8_t cmd_pos = 0;
 
-void bt_protocol_init(void) {}
+uint32_t last_bt_activity = 0;
+
+void bt_protocol_init(void) {
+    last_bt_activity = 0;
+}
 
 void bt_protocol_process(void) {
     while (uart_available()) {
         uint8_t c = uart_read_byte();
+        
+        INTCONbits.GIEL = 0;
+        last_bt_activity = system_ticks;
+        INTCONbits.GIEL = 1;
         if (c == '\n' || c == '\r') {
             if (cmd_pos == 0) continue;
             cmd_buf[cmd_pos] = '\0';
@@ -99,7 +108,9 @@ void bt_protocol_process(void) {
             }
             else if (strncmp(cmd_buf, "SERVO_SAVE_HOME ", 16) == 0) {
                 uint8_t sid = atoi(cmd_buf + 16);
-                calibration_save_servo_home(sid);
+                uint16_t cur = calibration_read_word(
+                    (sid == 1) ? EEPROM_ADDR_SERVO1_HOME : EEPROM_ADDR_SERVO2_HOME);
+                calibration_save_servo_home(sid, cur);
             }
             else if (strncmp(cmd_buf, "SERVO_GET_CONFIG ", 17) == 0) {
                 uint8_t sid = atoi(cmd_buf + 17);

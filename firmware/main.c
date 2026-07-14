@@ -10,10 +10,12 @@
 #include "encoder.h"
 #include "state_machine.h"
 #include "bt_protocol.h"
+#include "calibration.h"
 
 void main(void) {
     system_init();
     gpio_init();
+    calibration_init();
     uart_init();
     i2c_init();
     lcd_init();

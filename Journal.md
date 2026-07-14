@@ -38,6 +38,14 @@ Este archivo sirve como bitácora de desarrollo (changelog) para documentar el p
 - **TUI Mejoras:** Implementé en `app.py` la función de auto-reconexión Bluetooth solicitada (cada 3 segundos) y el diccionario de traducción `COLOR_MAP` para pasar de los índices del firmware a nombres legibles.
 - **Limpieza de Checklist:** Marqué las tareas 12, 13, 14, 17 y 18 como 100% resueltas en `CHECKLIST.md`. El sistema ahora es fully-featured.
 
+### Actualización (agy) - 2026-07-14 (Madrugada):
+- **Inicialización de EEPROM y Posiciones por Defecto:** Implementé la función `calibration_init()` en `main.c` y `calibration.c`. Ahora el firmware comprueba el Magic Byte (`0xA5`) en la dirección `0x00` de la EEPROM. Si está ausente, inicializa la EEPROM con los valores por defecto (Servo 1/2 Home = 90, Deflect = 0, Dwell = 500, PPR = 20, N = 0).
+- **Lectura/Escritura Real de Servos:** Conecté las funciones `calibration_save_servo_home`, `calibration_save_servo_deflect`, `calibration_save_servo_dwell`, `calibration_save_ppr` y `calibration_send_servo_config` para que interactúen directamente con las celdas de la EEPROM a nivel de bytes/palabras (words).
+- **Menú LCD Local Cíclico (Mantenimiento):** Agregué la lógica en `state_machine.c` para que al estar en estado `ST_TEST` con inactividad Bluetooth mayor a 5 segundos (`system_ticks - last_bt_activity > 5000`), el sistema active un menú interactivo en el LCD 1602.
+  - **MODE (RD2):** Cicla entre los 7 parámetros de configuración. El botón implementa detección por software de presión corta (avanza) y presión larga de 1.5s (guarda el valor en EEPROM y muestra "GUARDADO!").
+  - **UP/DOWN (RD5/RD6):** Modifican el valor en tiempo real y desplazan el servo físico correspondiente para verificar la alineación al instante.
+  - **Conexión de Estado:** La variable `last_bt_activity` se actualiza dinámicamente en `bt_protocol.c` al leer de la UART para salir del menú de inmediato si se detecta actividad del TUI.
+
 ---
 
 ## Registro de OpenCode
@@ -146,6 +154,15 @@ tui_app/
 ├── protocol.py       — parser de telemetría
 ├── pyproject.toml    — configuración del proyecto
 ```
+
+### Actualización (agy) - 2026-07-14 (Madrugada):
+- **Inicialización EEPROM:** Creó `calibration_init()` en `calibration.c`. Si el Magic Byte `0xA5` no está en `0x00`, escribe valores por defecto (Home=90, Deflect=0, Dwell=500, PPR=20).
+- **Menú LCD Cyclic Editor:** En modo TEST, si no hay actividad BT por 5s, entra en editor cíclico local:
+  - MODE corto: cicla 7 parámetros (S1 Home/Defl/Dwell, S2 Home/Defl/Dwell, PPR)
+  - MODE largo (>1.5s): guarda en EEPROM y muestra "GUARDADO!"
+  - UP/DOWN: ajustan valor y mueven servo en tiempo real
+  - Vuelve automáticamente al recibir datos por UART
+- **Funciones EEPROM:** `calibration_write_word()`, `calibration_read_word()`, `calibration_save_servo_home/deflect/dwell()`, `calibration_save_ppr()`
 
 ### Actualización (OpenCode) - 2da ronda de integración
 **Fecha:** 2026-07-13 (noche)

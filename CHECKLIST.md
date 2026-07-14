@@ -64,10 +64,12 @@
   - [x] TEST_ENCODER_RESET/READ, TEST_BEAM, TEST_BUTTON_ECHO
 
 - [x] **Task 13 — Calibration + EEPROM** (`calibration.c/.h`)
-  - [x] EEPROM layout correcto, read/write por registros directos
-  - [x] calibration_save_color(), calibration_load_all() funcionales
-  - [x] calibration_save_servo_home(), calibration_send_servo_config()
-  - [~] `calibration_start()` y `calibration_apply_white()` son stubs mínimos
+  - [x] Layout EEPROM según spec (magic=0x00, white balance, servo configs, colors)
+  - [x] Funciones: calibration_start(), calibration_is_done(), calibration_apply_white(), calibration_save_color(), calibration_load_all()
+  - [x] EEPROM read/write por registros directos (EEADR/EEDATA/EECON1/EECON2)
+  - [x] **PENDIENTE:** `calibration_start()` vacío — ahora con mocks iniciales
+  - [x] **PENDIENTE:** `calibration_apply_white()` vacío — ahora con balance de blancos básico
+  - [x] `calibration_init()` implementado con valores por defecto para Magic Byte (0xA5), Servos y PPR.
 
 - [x] **Task 14 — Anti-jam** (`anti_jam.c/.h`)
   - [x] anti_jam_init() llamado desde state_machine_init()
@@ -78,14 +80,15 @@
 
 ## 3. Integración Firmware (gaps detectados)
 
-- [x] **Firmware compila y linkea** — 14 archivos, sin errores (45% flash, 34.6% RAM)
+- [x] **Firmware compila y linkea** — 14 archivos, sin errores (56% flash, 42.7% RAM)
 - [x] `transit_ms` se usa dinámicamente en SORTING con anti_jam_check() durante la espera
 - [x] `anti_jam_check()` integrado — encoder belt jam + break-beam blockage jam
 - [x] Break-beams integrados vía anti_jam y TEST_BEAM command
 - [x] Mínimo espaciado por encoder pulses (SET_SPACING + min_spacing_pulses)
 - [x] `gpio_breakbeam_read()` llamado desde anti_jam y bt_protocol
+- [x] `calibration_init()` con defaults si magic byte EEPROM no existe
+- [x] Menú LCD cyclic editor: MODE cicla 7 parámetros, UP/DOWN ajusta, long-press guarda
 - [ ] `servo2_poll()` nunca se llama en el main loop (servo 2 opcional deshabilitado)
-- [ ] Menú LCD de calibración en dispositivo (cyclic editor) no implementado
 - [ ] Configuración HC-05 (AT mode → 115200) no documentada
 
 ---
@@ -116,7 +119,7 @@
 
 ## 5. Pendientes generales
 
-- [ ] Inicializar repo git y hacer commit inicial
+- [x] Inicializar repo git y push a GitHub (`https://github.com/gmoca/fajaClasificadora`)
 - [ ] Prueba de integración: TUI → BT → firmware → respuesta
 - [ ] Documentar HC-05 setup (AT commands para 115200)
 - [ ] Documentar assembly: cristal 20MHz, pines, jumpers, fuente de poder
