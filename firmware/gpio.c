@@ -20,6 +20,7 @@ void gpio_init(void) {
 
     TRISDbits.TRISD3 = 0;
     TRISDbits.TRISD4 = 1;
+    TRISDbits.TRISD7 = 1;
 
     TRISBbits.TRISB0 = 1;
     TRISBbits.TRISB2 = 1;

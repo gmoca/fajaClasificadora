@@ -156,12 +156,27 @@ void bt_protocol_process(void) {
                 strcat(buf, "\n");
                 uart_send_str(buf);
             }
-            else if (strcmp(cmd_buf, "TEST_BEAM") == 0) {
+            else if (strncmp(cmd_buf, "TEST_BEAM", 9) == 0) {
                 char buf[32];
-                strcpy(buf, "BEAM:");
-                buf[5] = gpio_breakbeam_read(1) ? '1' : '0';
-                buf[6] = '\n';
-                buf[7] = '\0';
+                uint8_t s1 = gpio_breakbeam_read(1);
+                uint8_t s2 = gpio_breakbeam_read(2);
+                if (strlen(cmd_buf) > 9) {
+                    uint8_t stn = atoi(cmd_buf + 10);
+                    buf[0] = 'B'; buf[1] = 'E'; buf[2] = 'A'; buf[3] = 'M';
+                    buf[4] = ':';
+                    buf[5] = (char)('0' + stn);
+                    buf[6] = ':';
+                    buf[7] = (stn == 1 ? s1 : s2) ? 'B' : 'C';
+                    buf[8] = '\n'; buf[9] = '\0';
+                } else {
+                    strcpy(buf, "BEAM:1:");
+                    buf[6] = s1 ? 'B' : 'C';
+                    buf[7] = ' ';
+                    buf[8] = '2';
+                    buf[9] = ':';
+                    buf[10] = s2 ? 'B' : 'C';
+                    buf[11] = '\n'; buf[12] = '\0';
+                }
                 uart_send_str(buf);
             }
             else if (strcmp(cmd_buf, "TEST_BUTTON_ECHO") == 0) {

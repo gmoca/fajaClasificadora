@@ -319,10 +319,12 @@ void state_machine_run(void) {
                     }
                     
                     if (!anti_jam_is_jammed()) {
-                        servo_set_angle(1, 90);
+                        uint16_t defl = calibration_read_word(EEPROM_ADDR_SERVO1_DEFL);
+                        uint16_t home = calibration_read_word(EEPROM_ADDR_SERVO1_HOME);
+                        servo_set_angle(1, defl);
                         uint32_t timeout = system_ticks + dwell_time_ms;
                         while (system_ticks < timeout) {}
-                        servo_set_angle(1, 0);
+                        servo_set_angle(1, home);
                     }
                 }
                 state = ST_RUNNING;

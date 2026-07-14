@@ -2,12 +2,12 @@
 #include "config.h"
 
 #define PULSES_PER_REV  20
-#define ROLLER_MM       100.0f
+#define ROLLER_MM       100
 #define SPEED_WINDOW_MS 500
 
 static volatile uint32_t total_pulses = 0;
 static volatile uint16_t pulse_window = 0;
-static volatile uint16_t speed_mm_s = 0;
+static volatile uint32_t speed_mm_s = 0;
 
 void encoder_init(void) {
     TRISBbits.TRISB2 = 1;
