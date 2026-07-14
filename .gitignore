@@ -1,0 +1,35 @@
+# MPLAB X build artifacts
+build/
+dist/
+
+# MPLAB X per-host config (contains local tool paths)
+nbproject/Makefile-local-default.mk
+nbproject/Makefile-genesis.properties
+nbproject/private/
+
+# XC8 compiler intermediates
+*.o
+*.obj
+*.p1
+*.rlf
+*.s
+*.lst
+*.pre
+*.sdb
+*.sym
+*.cmf
+*.elf
+*.hxl
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+NUL.d
+.superpowers/

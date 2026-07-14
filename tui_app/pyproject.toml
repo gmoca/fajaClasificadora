@@ -1,0 +1,10 @@
+[project]
+name = "faja-tui"
+version = "0.1.0"
+dependencies = [
+    "textual>=0.41.0",
+    "pyserial>=3.5",
+]
+
+[tool.textual]
+app = "app:FajaApp"

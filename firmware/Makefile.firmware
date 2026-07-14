@@ -1,0 +1,40 @@
+# Standalone firmware Makefile for PIC18F4550 + XC8
+# Called from parent Makefile's .build-pre hook
+
+CC = "C:\Program Files\Microchip\xc8\v3.10\bin\xc8-cc.exe"
+AR = "C:\Program Files\Microchip\xc8\v3.10\bin\xc8-ar.exe"
+DFP_DIR = "C:/Program Files/Microchip/MPLABX/v6.30/packs/Microchip/PIC18Fxxxx_DFP/1.7.171"
+
+CFLAGS = -mcpu=18F4550 -mdfp=$(DFP_DIR)/xc8 -std=c99 -O0 -fasmfile -maddrqual=ignore \
+         -xassembler-with-cpp -mwarn=-3 -Wa,-a -msummary=-psect,-class,+mem,-hex,-file \
+         -ginhx32 -Wl,--data-init -mno-keep-startup -mno-download -mno-default-config-bits \
+         -gdwarf-3 -mstack=compiled:auto:auto:auto
+
+SRCDIR = .
+OBJDIR = ../build/default/production
+DISTDIR = ../dist/default/production
+
+SRCS = main.c system.c gpio.c uart.c i2c.c lcd.c tcs34725.c pwm.c servo.c encoder.c \
+       state_machine.c bt_protocol.c calibration.c anti_jam.c
+OBJS = $(SRCS:%.c=$(OBJDIR)/%.p1)
+HEX = $(DISTDIR)/pryMicroFaja.X.production.hex
+
+.PHONY: all clean
+
+all: $(HEX)
+
+$(OBJDIR)/%.p1: $(SRCDIR)/%.c $(SRCDIR)/config.h | $(OBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OBJDIR):
+	gnumkdir -p $(OBJDIR)
+
+$(DISTDIR):
+	gnumkdir -p $(DISTDIR)
+
+$(HEX): $(OBJS) | $(DISTDIR)
+	$(CC) $(CFLAGS) -o $(DISTDIR)/pryMicroFaja.X.production.elf $(OBJS)
+	$(CC) $(CFLAGS) -Wl,-Map=$(DISTDIR)/pryMicroFaja.X.production.map -o $@ $(OBJS)
+
+clean:
+	rm -rf $(OBJDIR)
