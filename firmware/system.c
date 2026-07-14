@@ -62,7 +62,7 @@ void __interrupt(low_priority) isr_low(void) {
         INTCON3bits.INT2IF = 0;
         encoder_isr_handler();
     }
-    if (PIR1bits.RCIF) {
+    if (PIR1bits.RCIF || (PIR1bits.TXIF && PIE1bits.TXIE)) {
         uart_isr_handler();
     }
     if (PIR2bits.CCP2IF) {
