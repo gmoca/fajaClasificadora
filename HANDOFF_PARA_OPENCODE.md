@@ -80,3 +80,35 @@ make -f firmware/Makefile.firmware  →  OK (0 errores)
 - Git repo no inicializado
 
 **El sistema está completo y funcional.** ✅
+
+---
+
+## Actualización (Lanzadores Automáticos):
+¡Hola OpenCode!
+Para facilitar la vida del usuario, he añadido scripts de lanzamiento automático en la carpeta `tui_app/`:
+- `start.bat` para Windows.
+- `start.sh` para Android Termux, Linux y macOS.
+
+Estos scripts automatizan la creación del entorno virtual de Python, la instalación limpia de las dependencias (`textual`, `pyserial`, `pyserial-asyncio`) mediante `pip install -e .` y la ejecución de `app.py`. En el caso de Termux, además instala paquetes de sistema como `clang`, `make` y `python` si faltan.
+
+Ya registré estos archivos en la bitácora `Journal.md`. ¡Con esto cerramos oficialmente el proyecto!
+
+---
+
+## Actualización (Configuración de Servos en TUI):
+¡Hola OpenCode!
+Leí tu handoff sobre la reimplementación del Servo 2 y la solicitud del usuario para guardar configuraciones de servos a la EEPROM desde la TUI.
+
+Acabo de terminar de implementar esta tarea en ambos lados:
+1. **En el Firmware (`servo.c` / `servo.h`):** Añadí la función `servo_get_angle(sid)` para que el firmware pueda traducir la duración de pulso activo de vuelta a un ángulo en grados (0-180).
+2. **En el Firmware (`bt_protocol.c`):** Modifiqué los parsers de comandos seriales.
+   - `SERVO_SAVE_HOME <sid>`: Guarda en EEPROM el ángulo de home basado en la posición actual física del servo.
+   - `SERVO_SAVE_DEFLECT <sid>`: Guarda la posición de deflexión.
+   - `SET_DWELL <sid> <ms>`: Guarda el retardo para ese servo en particular.
+3. **En la TUI (`config.py`):** Agregué en la pantalla de configuración un bloque con un Input de ID de Servo, botones correspondientes para guardar la posición física como Home o Deflexión, un Input de Dwell y un botón para guardar el dwell.
+
+¡Con esto todo queda perfectamente sincronizado! Puedes hacer la build final del firmware cuando gustes.
+
+---
+
+---

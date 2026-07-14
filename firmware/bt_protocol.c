@@ -108,17 +108,29 @@ void bt_protocol_process(void) {
             }
             else if (strncmp(cmd_buf, "SERVO_SAVE_HOME ", 16) == 0) {
                 uint8_t sid = atoi(cmd_buf + 16);
-                uint16_t cur = calibration_read_word(
-                    (sid == 1) ? EEPROM_ADDR_SERVO1_HOME : EEPROM_ADDR_SERVO2_HOME);
-                calibration_save_servo_home(sid, cur);
+                uint16_t angle = servo_get_angle(sid);
+                calibration_save_servo_home(sid, angle);
+            }
+            else if (strncmp(cmd_buf, "SERVO_SAVE_DEFLECT ", 19) == 0) {
+                uint8_t sid = atoi(cmd_buf + 19);
+                uint16_t angle = servo_get_angle(sid);
+                calibration_save_servo_deflect(sid, angle);
             }
             else if (strncmp(cmd_buf, "SERVO_GET_CONFIG ", 17) == 0) {
                 uint8_t sid = atoi(cmd_buf + 17);
                 calibration_send_servo_config(sid);
             }
             else if (strncmp(cmd_buf, "SET_DWELL ", 10) == 0) {
-                uint16_t dwell = atoi(cmd_buf + 10);
-                state_machine_set_dwell(dwell);
+                char *sp1 = strchr(cmd_buf + 10, ' ');
+                if (sp1) {
+                    *sp1 = '\0';
+                    uint8_t sid = atoi(cmd_buf + 10);
+                    uint16_t dwell = atoi(sp1 + 1);
+                    calibration_save_servo_dwell(sid, dwell);
+                } else {
+                    uint16_t dwell = atoi(cmd_buf + 10);
+                    state_machine_set_dwell(dwell);
+                }
             }
             else if (strcmp(cmd_buf, "TEST_ENCODER_RESET") == 0) {
                 encoder_reset();

@@ -71,4 +71,8 @@ void __interrupt(low_priority) isr_low(void) {
         PIR2bits.CCP2IF = 0;
         servo_ccp2_isr();
     }
+    if (PIR2bits.TMR3IF) {
+        PIR2bits.TMR3IF = 0;
+        servo_timer3_isr();
+    }
 }

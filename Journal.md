@@ -45,6 +45,7 @@ Este archivo sirve como bitácora de desarrollo (changelog) para documentar el p
   - **MODE (RD2):** Cicla entre los 7 parámetros de configuración. El botón implementa detección por software de presión corta (avanza) y presión larga de 1.5s (guarda el valor en EEPROM y muestra "GUARDADO!").
   - **UP/DOWN (RD5/RD6):** Modifican el valor en tiempo real y desplazan el servo físico correspondiente para verificar la alineación al instante.
   - **Conexión de Estado:** La variable `last_bt_activity` se actualiza dinámicamente en `bt_protocol.c` al leer de la UART para salir del menú de inmediato si se detecta actividad del TUI.
+- **Scripts de Lanzamiento Automático:** Diseñé y creé los archivos `start.bat` y `start.sh` en `tui_app/` para permitir que cualquier usuario inicialice automáticamente el entorno virtual de Python e instale todas las dependencias requeridas en Windows, Linux, macOS o Android Termux con un solo comando.
 
 ---
 
@@ -153,6 +154,8 @@ tui_app/
 ├── connect.py        — BT serial async
 ├── protocol.py       — parser de telemetría
 ├── pyproject.toml    — configuración del proyecto
+├── start.bat         — lanzador automático para Windows
+└── start.sh          — script de arranque para Linux/macOS/Termux
 ```
 
 ### Actualización (agy) - 2026-07-14 (Madrugada):
@@ -189,4 +192,37 @@ agy completó su segunda ronda con:
 - **eeprom_write/read obsoletos**: XC8 v3.10 (clang) eliminó el soporte de las macros `eeprom_write`/`eeprom_read` del header `<pic18.h>`. Hay que usar registros directamente.
 - **utoa/ultoa eliminados**: XC8 v3.10 no incluye las extensiones `utoa`/`ultoa` del viejo compilador HI-TECH. Cualquier conversión numérica debe hacerse con funciones manuales para evitar el peso de `sprintf`.
 - **Stack compilado**: Con `-mstack=compiled:auto:auto:auto` el compilador asigna el stack estáticamente, eliminando la necesidad de stack hardware y ahorrando RAM.
+
+### Actualización (OpenCode) - 2026-07-14 (tarde)
+- **Fix `app.py`**: `query_one("DashboardScreen", DashboardScreen)` no funciona en Textual (los CSS selectors con string requieren el nombre en minúsculas). Cambiado a `query_one(DashboardScreen)` pasando la clase directamente.
+- **Dependencia faltante**: `connect.py` usa `import serial_asyncio`, que requiere `pyserial-asyncio`. Agregado a `pyproject.toml`.
+- **Docs actualizados**: CHECKLIST.md (build stats, TUI fixes), HANDOFF_PARA_ANTIGRAVITY.md (última build con todos los cambios de agy).
+- **Revisión de cambios de agy**: Verifiqué `start.bat` y `start.sh` (scripts de lanzamiento automático). Se ven correctos.
+
+### Actualización (agy) - 2026-07-14 (ConfigScreen servos)
+- **`tui_app/screens/config.py`**: Agregó sección de configuración de servos: Input para Servo ID, botones "Guardar Home", "Guardar Deflexión", Input Dwell + botón guardar. Todo conectado vía BT.
+- **`firmware/servo.c`**: Agregó `servo_get_angle(sid)` — devuelve el ángulo actual del servo (0-180) a partir del pulse width activo.
+- **`firmware/bt_protocol.c`**: `SERVO_SAVE_HOME` y `SERVO_SAVE_DEFLECT` ahora guardan el ángulo físico real vía `servo_get_angle()`. `SET_DWELL` ahora acepta `SET_DWELL <sid> <ms>` para guardar en EEPROM por servo.
+
+### Actualización (OpenCode) - 2026-07-14 (servo 2 + docs)
+
+- **Servo 2 reimplementado desde cero**: Antes era `servo_step()` con 1ms de resolución y solo 2 posiciones (~90° de error). Ahora usa **TMR3 como timer dedicado** con interrupción cada **25 µs**:
+  - Resolución efectiva: ~3° (vs ~0.07° de servo 1 por hardware, pero totalmente funcional)
+  - Misma interfaz: `servo_set_angle(2, angulo)` funciona igual que servo 1
+  - Se activa automáticamente — `servo_init()` configura TMR3
+  - ISR en `servo_timer3_isr()`, manejada desde `isr_low()` en system.c
+- **14 archivos compilan sin errores**
+
+### Actualización (OpenCode) - 2026-07-14 (documentación)
+- **`docs/hc05-setup.md`**: Guía completa en español para configurar HC-05 en modo AT, comandos para fijar 115200 baudios, diagrama de conexión al PIC con divisor resistivo, y solución de problemas.
+- **`docs/assembly-guide.md`**: Guía de ensamble con pinout del PIC18F4550, diagrama de 3 rieles de poder, conexiones L298N, break-beam IR, botones, E-stop, encoder, TCS34725, LCD, servos. Incluye checklist pre-encendido y pasos de calibración inicial.
+- CHECKLIST.md: marcados como completados los items de documentación.
+
+### Actualización (agy) - 2026-07-14 (Configuración de Servos en TUI)
+- **TUI ConfigScreen Actualizada:** Añadí inputs para Servo ID y Tiempo Dwell, y botones para guardar el ángulo actual del servo como Home (`SERVO_SAVE_HOME <sid>`), como Deflexión (`SERVO_SAVE_DEFLECT <sid>`) y el tiempo Dwell (`SET_DWELL <sid> <ms>`) en la EEPROM.
+- **Soporte de Ángulos en Servos (Firmware):** Añadí la función `servo_get_angle(sid)` en `servo.c`/`servo.h` para que el firmware pueda reconstruir y leer el ángulo actual en grados basándose en los anchos de pulso activos.
+- **Comandos BT en Firmware:** Implementé y expandí los parsers de comandos en `bt_protocol.c`:
+  - `SERVO_SAVE_HOME <sid>`: Guarda la posición actual de ángulo como Home.
+  - `SERVO_SAVE_DEFLECT <sid>`: Guarda la posición actual como Deflexión.
+  - `SET_DWELL <sid> <ms>`: Guarda el retardo de clasificación en la EEPROM para el servo especificado.
 

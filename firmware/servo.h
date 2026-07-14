@@ -10,7 +10,8 @@
 
 void servo_init(void);
 void servo_set_angle(uint8_t servo_id, uint16_t angle_deg);
+uint16_t servo_get_angle(uint8_t servo_id);
 void servo_ccp2_isr(void);
-void servo_step(void);
+void servo_timer3_isr(void);
 
 #endif

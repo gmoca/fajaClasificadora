@@ -58,9 +58,8 @@ class FajaApp(App):
             self.update_dashboard(data)
 
     def update_dashboard(self, data: dict):
-        # We broadcast the update to screens
         try:
-            dash = self.query_one("DashboardScreen", DashboardScreen)
+            dash = self.query_one(DashboardScreen)
             t = data.get("type", "")
             if t == "STATE":
                 dash.state = data.get("value", "unknown")
@@ -69,22 +68,18 @@ class FajaApp(App):
             elif t == "DETECT":
                 c_idx = str(data.get("color", "-"))
                 dash.last_color = self.COLOR_MAP.get(c_idx, f"Idx: {c_idx}")
-                
-            # log it to screens if needed
+
             raw_line = str(data)
             dash.log_event(raw_line)
             try:
-                logs = self.query_one("LogViewerScreen", LogViewerScreen)
-                logs.log_event(raw_line)
-            except:
+                self.query_one(LogViewerScreen).log_event(raw_line)
+            except Exception:
                 pass
-                
             try:
-                ts = self.query_one("TestScreen", TestScreen)
-                ts.log_event(raw_line)
-            except:
+                self.query_one(TestScreen).log_event(raw_line)
+            except Exception:
                 pass
-        except:
+        except Exception:
             pass
 
     def bt_send(self, cmd: str):

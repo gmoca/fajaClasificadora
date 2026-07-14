@@ -41,7 +41,7 @@
   - [x] INT2 en RB2, rising edge, prioridad baja
   - [x] Contador de pulsos + velocidad en mm/s (ventana 500ms)
 
-### Build firmware: 36.5% flash, 28.1% RAM ✅
+### Build firmware: 56.0% flash, 42.7% RAM ✅
 
 ---
 
@@ -88,7 +88,7 @@
 - [x] `gpio_breakbeam_read()` llamado desde anti_jam y bt_protocol
 - [x] `calibration_init()` con defaults si magic byte EEPROM no existe
 - [x] Menú LCD cyclic editor: MODE cicla 7 parámetros, UP/DOWN ajusta, long-press guarda
-- [ ] `servo2_poll()` nunca se llama en el main loop (servo 2 opcional deshabilitado)
+- [x] Servo 2 reimplementado con TMR3 ISR (25 µs, ~3° de resolución) — igual calidad que servo 1
 - [ ] Configuración HC-05 (AT mode → 115200) no documentada
 
 ---
@@ -114,6 +114,9 @@
 
 - [x] Auto-reconnect BT cada 3s implementado
 - [x] COLOR_MAP en app.py traduce índices a nombres legibles
+- [x] Fix: `query_one("DashboardScreen", ...)` → `query_one(DashboardScreen)` (CSS selector inválido)
+- [x] `pyserial-asyncio` agregado a dependencias
+- [x] `start.bat` + `start.sh` — scripts de lanzamiento automático (Windows/Linux/macOS/Termux)
 
 ---
 
@@ -121,8 +124,8 @@
 
 - [x] Inicializar repo git y push a GitHub (`https://github.com/gmoca/fajaClasificadora`)
 - [ ] Prueba de integración: TUI → BT → firmware → respuesta
-- [ ] Documentar HC-05 setup (AT commands para 115200)
-- [ ] Documentar assembly: cristal 20MHz, pines, jumpers, fuente de poder
+- [x] Documentar HC-05 setup — `docs/hc05-setup.md`
+- [x] Documentar assembly — `docs/assembly-guide.md`
 
 ---
 
@@ -135,4 +138,4 @@
 | [ ] | Pendiente — no iniciado |
 
 ---
-*Última actualización: 2026-07-13*
+*Última actualización: 2026-07-14*

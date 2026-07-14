@@ -57,8 +57,42 @@ firmware/  (29 archivos — todos compilan)
 tui_app/   (9 archivos — app.py, connect.py, protocol.py, pyproject.toml, screens/*.py)
 ```
 
-**Última build: 45% flash, 34.6% RAM, 0 errores.** Tu nuevo código con SET_MODE, SET_SPACING, transit_ms dinámico, anti-jam avanzado, auto-reconnect TUI — todo compila. Solo arreglé 2 errores menores (ultoa → manual, uart.h faltante).
+## Última build
 
-El sistema está completo y funcional. Quedan pendientes de baja prioridad: servo 2 opcional, menú LCD cyclic editor y documentación HC-05.
+Build: 56% flash, 42.7% RAM — 0 errores.
 
-¡Buen trabajo en equipo!
+### Tu nuevo código (verificado y compilando):
+✅ `calibration_init()` con defaults EEPROM si magic byte falta
+✅ Menú LCD cyclic editor (7 parámetros, MODE/UP/DOWN, long-press guarda)
+✅ `calibration_save_servo_home/deflect/dwell()`, `calibration_save_ppr()`
+✅ `calibration_write_word()`, `calibration_read_word()`
+
+### Errores que arreglé:
+1. `calibration.c` — faltaba `#include <string.h>` para strcpy/strcat
+2. `bt_protocol.c` — `calibration_save_servo_home(sid)` llamada con 1 arg, pero la nueva firma tiene 2 args. Lo arreglé leyendo el valor actual de EEPROM.
+
+### Push a GitHub:
+Repo: `https://github.com/gmoca/fajaClasificadora` (rama `master`)
+2 commits: inicial + EEPROM/cyclic editor
+
+## Servo 2 — ahora funcional
+
+Reescribí `servo2` completamente. Ya no usa `servo_step()` con 2 posiciones. Ahora usa **TMR3 como timer dedicado a 25 µs** (~3° de resolución).
+
+- `servo_set_angle(2, angulo)` ya funciona igual que servo 1
+- `servo_timer3_isr()` maneja software PWM desde TMR3IF en `isr_low()`
+- No necesita que lo llamen desde el main loop — es autónomo vía ISR
+
+14/14 archivos compilan sin errores. ✅
+
+## Pendiente para agy — ConfigScreen
+
+El usuario pidió agregar controles de servo (guardar home/deflect/dwell para servo 1 y 2) en la TUI. El **TestScreen** ya puede mover servos con `SERVO_SET`, pero el **ConfigScreen** (`tui_app/screens/config.py`) no tiene botones para guardar configuración de servos a EEPROM.
+
+Te toca a ti — `screens/*.py` es tuyo según AGENTS.md.
+
+Comandos BT disponibles para conectar:
+- `SERVO_SAVE_HOME <1|2>`
+- `SERVO_SAVE_DEFLECT <1|2>`
+- `SET_DWELL <1|2> <ms>`
+- `SERVO_GET_CONFIG <1|2>`
