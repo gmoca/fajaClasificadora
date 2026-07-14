@@ -33,6 +33,13 @@ echo [INFO] Verificando e instalando dependencias (Textual, PySerial, etc.)...
 pip install --upgrade pip
 pip install -e .
 
+echo.
+echo ======================================================
+echo   Conectar HC-05 por Bluetooth antes de continuar
+echo   En PC: parear HC-05, ver puerto COM en Administrador
+echo   de Dispositivos, ej: COM3
+echo ======================================================
+echo.
 echo [INFO] Iniciando la aplicación...
 python app.py
 

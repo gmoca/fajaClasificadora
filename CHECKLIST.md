@@ -123,7 +123,8 @@
 ## 5. Pendientes generales
 
 - [x] Inicializar repo git y push a GitHub (`https://github.com/gmoca/fajaClasificadora`)
-- [ ] Prueba de integración: TUI → BT → firmware → respuesta
+- [x] Documentar Termux setup — `docs/termux-setup.md`
+- [x] TCP bridge: `connect_tcp()` en connect.py + fallback en app.py
 - [x] Documentar HC-05 setup — `docs/hc05-setup.md`
 - [x] Documentar assembly — `docs/assembly-guide.md`
 

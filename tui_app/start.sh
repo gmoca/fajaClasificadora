@@ -47,6 +47,19 @@ echo "[INFO] Instalando y actualizando dependencias de la TUI..."
 pip install --upgrade pip
 pip install -e .
 
-# 4. Iniciar la aplicación
+# 4. Recordatorio de conexión Bluetooth
+echo ""
+echo "======================================================"
+echo "  IMPORTANTE: Conectar Bluetooth antes de continuar"
+echo "======================================================"
+echo ""
+echo "  Opcion A (root):  sudo rfcomm bind 0 <MAC> 1"
+echo "  Opcion B (recomendado): Abrir Serial Bluetooth Terminal"
+echo "                         → Conectar al HC-05"
+echo "                         → Menu > TCP Server > Start (puerto 8080)"
+echo ""
+echo "======================================================"
+
+# 5. Iniciar la aplicación
 echo "[INFO] Iniciando la aplicación..."
 python3 app.py

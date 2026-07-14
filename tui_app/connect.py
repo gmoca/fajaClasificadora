@@ -6,6 +6,7 @@ class BTManager:
         self.reader = None
         self.writer = None
         self._connected = False
+        self._mode = None
 
     @property
     def connected(self) -> bool:
@@ -18,6 +19,17 @@ class BTManager:
                 url=port, baudrate=baud
             )
             self._connected = True
+            self._mode = "serial"
+            return True
+        except Exception:
+            self._connected = False
+            return False
+
+    async def connect_tcp(self, host: str = "127.0.0.1", port: int = 8080) -> bool:
+        try:
+            self.reader, self.writer = await asyncio.open_connection(host, port)
+            self._connected = True
+            self._mode = "tcp"
             return True
         except Exception:
             self._connected = False
@@ -29,6 +41,7 @@ class BTManager:
             if hasattr(self.writer, "wait_closed"):
                 await self.writer.wait_closed()
         self._connected = False
+        self._mode = None
 
     async def send(self, cmd: str):
         if self.writer and self._connected:

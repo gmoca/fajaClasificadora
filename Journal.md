@@ -226,6 +226,12 @@ agy completó su segunda ronda con:
   - `SERVO_SAVE_DEFLECT <sid>`: Guarda la posición actual como Deflexión.
   - `SET_DWELL <sid> <ms>`: Guarda el retardo de clasificación en la EEPROM para el servo especificado.
 
+### Actualización (OpenCode) - 2026-07-14 (Termux + TCP bridge)
+- **`docs/termux-setup.md`**: Guía completa para ejecutar TUI en Termux: instalación, 3 métodos de conexión BT (rfcomm root, Serial Bluetooth Terminal TCP bridge, USB-OTG), script de prueba y solución de problemas.
+- **`connect.py`**: Agregado `connect_tcp(host, port)` — conexión asíncrona por TCP para el puente Serial Bluetooth Terminal.
+- **`app.py`**: `action_connect()` ahora intenta TCP 127.0.0.1:8080 como fallback si los puertos seriales fallan.
+- **`start.sh`** y **`start.bat`**: Agregados recordatorios de conexión Bluetooth antes de lanzar la app.
+
 ### Actualización (agy) - 2026-07-14 (Visibilidad de archivos en MPLAB X)
 - **Sincronización de IDE (`nbproject/configurations.xml`):** Los archivos `.c` y `.h` del firmware no estaban declarados dentro del XML de configuración del proyecto de MPLAB X, por lo que el IDE no mostraba ningún archivo en el árbol lateral ("Source Files" y "Header Files"). Los agregué a sus carpetas lógicas correspondientes. El proyecto ahora se visualiza correctamente en el IDE y se reconstruyó/compiló de forma exitosa.
 

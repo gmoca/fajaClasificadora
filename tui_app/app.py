@@ -93,6 +93,10 @@ class FajaApp(App):
                 if not silent:
                     self.notify(f"Conectado a {port}")
                 return
+        if await self.bt.connect_tcp("127.0.0.1", 8080):
+            if not silent:
+                self.notify("Conectado vía TCP (Serial BT Bridge)")
+            return
         if not silent:
             self.notify("No se pudo conectar", severity="error")
 
