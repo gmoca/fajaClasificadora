@@ -15,8 +15,10 @@
 void main(void) {
     system_init();
     gpio_init();
-    calibration_init();
     uart_init();
+    uart_send_str("BOOTING...\n");
+    
+    calibration_init();
     i2c_init();
     lcd_init();
 

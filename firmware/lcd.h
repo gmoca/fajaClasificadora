@@ -3,7 +3,7 @@
 
 #include "i2c.h"
 
-#define LCD_ADDR 0x27
+#define LCD_ADDR 0x20
 
 void lcd_init(void);
 void lcd_clear(void);

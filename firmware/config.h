@@ -11,7 +11,7 @@
 #pragma config FCMEN = OFF
 #pragma config BOR = ON
 #pragma config PWRT = ON
-#pragma config MCLRE = ON
+#pragma config MCLRE = OFF
 #pragma config PBADEN = OFF
 #pragma config STVREN = ON
 #pragma config LVP = OFF

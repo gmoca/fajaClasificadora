@@ -248,3 +248,7 @@ agy completó su segunda ronda con:
 - **Corrección preservada**: Se re-aplicaron los fixes de EEPROM race condition de agy (`while (EECON1bits.WR)` antes de lectura EEPROM y antes de limpiar WREN tras escritura) porque son válidos.
 - **Assembly guide**: Diagrama de pines corregido al pinout real del PIC18F4550 DIP-40.
 - **AGENTS.md**: Compactado con tabla de build, tabla de workflow dual-agent, y sección de XC8 v3.10 quirks.
+
+### Actualización (agy) - 2026-07-14 (Fixes simulación Proteus)
+- **Ajuste Dirección LCD (`firmware/lcd.h`):** Modifiqué `LCD_ADDR` de `0x27` (usado por PCF8574A) a `0x20` (usado por el PCF8574 estándar cableado en Proteus) para que la pantalla responda en la simulación.
+- **Desactivación de MCLR (`firmware/config.h`):** Cambié `MCLRE = ON` a `MCLRE = OFF`. Esto previene que el microcontrolador PIC18F4550 entre en Reset permanente si la simulación no inicializa el pin MCLR a 5V. La compilación y el build fueron exitosos.
