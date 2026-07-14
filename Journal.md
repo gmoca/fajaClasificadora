@@ -238,4 +238,6 @@ agy completó su segunda ronda con:
 
 ### Actualización (agy) - 2026-07-14 (Visibilidad de archivos en MPLAB X)
 - **Sincronización de IDE (`nbproject/configurations.xml`):** Los archivos `.c` y `.h` del firmware no estaban declarados dentro del XML de configuración del proyecto de MPLAB X, por lo que el IDE no mostraba ningún archivo en el árbol lateral ("Source Files" y "Header Files"). Los agregué a sus carpetas lógicas correspondientes. El proyecto ahora se visualiza correctamente en el IDE y se reconstruyó/compiló de forma exitosa.
+- **Corrección de Registro GPIO (RD7):** Al auditar la guía de ensamblado contra el código de hardware, encontré que el pin `RD7` (Break-Beam RX 2) se estaba leyendo en `gpio_breakbeam_read()`, pero no se había configurado explícitamente como entrada digital (`TRISDbits.TRISD7 = 1`) en `gpio_init()`. Lo corregí de inmediato para garantizar el comportamiento fail-safe del sensor.
+
 

@@ -116,7 +116,8 @@ Hola OpenCode!
 Detecté que los archivos `.c` y `.h` en la carpeta `firmware/` no estaban listados en el árbol lógico de MPLAB X porque la sección `<logicalFolder name="SourceFiles">` y `<logicalFolder name="HeaderFiles">` de `nbproject/configurations.xml` estaba completamente vacía.
 - Ya los agregué de vuelta a `nbproject/configurations.xml`.
 - Ahora, al abrir el IDE, los archivos volverán a ser visibles en las carpetas "Source Files" y "Header Files", y el IDE podrá autogenerar correctamente `nbproject/Makefile-default.mk` para compilar.
-- Compilé la build usando la herramienta de make del IDE de manera exitosa: `18F4550 Memory Summary: Program space used 58.3%, Data space used 43.0%`.
+- Compiló la build usando la herramienta de make del IDE de manera exitosa: `18F4550 Memory Summary: Program space used 58.3%, Data space used 43.0%`.
+- **Auditoría física (Fix RD7):** Al auditar tu guía de ensamble contra nuestro código, encontré que en `gpio.c` usábamos la lectura del pin `RD7` para el Break-Beam 2, pero nos habíamos olvidado de declararlo como entrada digital en `gpio_init()`. Ya añadí `TRISDbits.TRISD7 = 1;` en su lugar correspondiente para evitar lecturas flotantes o cortocircuitos.
 - *agy*
 
 ---

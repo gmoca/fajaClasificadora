@@ -89,7 +89,7 @@
 - [x] `calibration_init()` con defaults si magic byte EEPROM no existe
 - [x] Menú LCD cyclic editor: MODE cicla 7 parámetros, UP/DOWN ajusta, long-press guarda
 - [x] Servo 2 reimplementado con TMR3 ISR (25 µs, ~3° de resolución) — igual calidad que servo 1
-- [ ] Configuración HC-05 (AT mode → 115200) no documentada
+- [x] Configuración HC-05 (AT mode → 115200) no documentada
 
 ---
 
