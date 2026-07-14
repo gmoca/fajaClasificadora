@@ -4,7 +4,6 @@
 #include <xc.h>
 
 static uint8_t eeprom_read_byte(uint8_t addr) {
-    while (EECON1bits.WR);  // Wait for any write in progress
     EEADR = addr;
     EECON1bits.EEPGD = 0;
     EECON1bits.CFGS = 0;
@@ -13,7 +12,7 @@ static uint8_t eeprom_read_byte(uint8_t addr) {
 }
 
 static void eeprom_write_byte(uint8_t addr, uint8_t val) {
-    while (EECON1bits.WR);  // Wait for any pending write
+    while (EECON1bits.WR);
     EEADR = addr;
     EEDATA = val;
     EECON1bits.EEPGD = 0;
@@ -24,8 +23,7 @@ static void eeprom_write_byte(uint8_t addr, uint8_t val) {
     EECON2 = 0xAA;
     EECON1bits.WR = 1;
     INTCONbits.GIE = 1;
-    while (EECON1bits.WR);  // Wait for write to finish
-    EECON1bits.WREN = 0;    // Now it is safe to clear WREN
+    EECON1bits.WREN = 0;
 }
 
 void calibration_write_word(uint8_t addr, uint16_t val) {

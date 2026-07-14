@@ -118,14 +118,6 @@ Detecté que los archivos `.c` y `.h` en la carpeta `firmware/` no estaban lista
 - Ahora, al abrir el IDE, los archivos volverán a ser visibles en las carpetas "Source Files" y "Header Files", y el IDE podrá autogenerar correctamente `nbproject/Makefile-default.mk` para compilar.
 - Compiló la build usando la herramienta de make del IDE de manera exitosa: `18F4550 Memory Summary: Program space used 58.3%, Data space used 43.0%`.
 - **Auditoría física (Fix RD7):** Al auditar tu guía de ensamble contra nuestro código, encontré que en `gpio.c` usábamos la lectura del pin `RD7` para el Break-Beam 2, pero nos habíamos olvidado de declararlo como entrada digital en `gpio_init()`. Ya añadí `TRISDbits.TRISD7 = 1;` en su lugar correspondiente para evitar lecturas flotantes o cortocircuitos.
-- **Fix EEPROM en Proteus:** Corregí un error que saltaba en la simulación de Proteus (`Modification of EECON1 whilst a read or write is in progress`). Ocurría porque se intentaba modificar `EECON1` para deshabilitar la escritura (`WREN = 0`) o para leer (`RD = 1`) inmediatamente después de disparar `WR = 1` en celdas consecutivas (como en la inicialización de defaults), interrumpiendo el ciclo físico de la EEPROM de ~4ms. Añadí un `while (EECON1bits.WR);` al inicio de `eeprom_read_byte()` y al final de `eeprom_write_byte()` (justo antes de limpiar `WREN`). Ya compila y corre limpio en Proteus sin ese warning.
-- **Fix Crítico I2C e INT0 (Multiplexación y E-stop):** Encontré un conflicto de pines muy severo en la configuración original:
-  - En el PIC18F4550, la I2C por hardware obligatoriamente requiere los pines `RB0` (SDA) y `RB1` (SCL), pero la guía original listaba erróneamente `RC3`/`RC4` (que corresponden a PIC16F877A) y configuraba `RB0` como E-stop (`INT0`). Esto cortocircuitaba la SDA al presionar el botón y provocaba falsos disparos del E-stop con el clock de la I2C.
-  - Para solucionarlo:
-    1. Agregué en `i2c.c` la configuración `TRISBbits.TRISB0 = 1` y `TRISBbits.TRISB1 = 1` requerida para que trabaje el módulo MSSP.
-    2. Moví el E-stop al pin **`RB3`** (Pin 36), declarándolo como entrada en `gpio.c`.
-    3. Removí la interrupción por hardware `INT0` de `system.c` y ahora realizamos un sondeo (polling) por software de `RB3` (active-low) cada 1ms dentro de la interrupción del TMR0 (lo cual es sumamente seguro y previene colisiones con la I2C).
-    4. Modifiqué la guía de ensamble (`assembly-guide.md`) con el pinout correcto del PIC18F4550 para reflejar estos cambios.
 - *agy*
 
 ---

@@ -10,6 +10,10 @@ volatile uint32_t system_ticks = 0;
 void system_init(void) {
     RCONbits.IPEN = 1;
 
+    INTCON2bits.INTEDG0 = 0;
+    INTCONbits.INT0IE = 1;
+    INTCONbits.INT0IF = 0;
+
     INTCON3bits.INT2IE = 1;
     INTCON3bits.INT2IP = 0;
     INTCON2bits.INTEDG2 = 1;
@@ -41,7 +45,10 @@ void system_init(void) {
 }
 
 void __interrupt(high_priority) isr_high(void) {
-    // INT0 E-stop moved to polled RB3 input to prevent I2C SDA conflicts on RB0
+    if (INTCONbits.INT0IF) {
+        INTCONbits.INT0IF = 0;
+        state_machine_estop();
+    }
 }
 
 void __interrupt(low_priority) isr_low(void) {
@@ -52,11 +59,6 @@ void __interrupt(low_priority) isr_low(void) {
         system_ticks++;
         encoder_tick_handler();
         gpio_scan_buttons();
-        
-        // Polled E-stop on RB3 (active low)
-        if (PORTBbits.RB3 == 0) {
-            state_machine_estop();
-        }
     }
     if (INTCON3bits.INT2IF) {
         INTCON3bits.INT2IF = 0;

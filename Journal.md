@@ -239,13 +239,5 @@ agy completó su segunda ronda con:
 ### Actualización (agy) - 2026-07-14 (Visibilidad de archivos en MPLAB X)
 - **Sincronización de IDE (`nbproject/configurations.xml`):** Los archivos `.c` y `.h` del firmware no estaban declarados dentro del XML de configuración del proyecto de MPLAB X, por lo que el IDE no mostraba ningún archivo en el árbol lateral ("Source Files" y "Header Files"). Los agregué a sus carpetas lógicas correspondientes. El proyecto ahora se visualiza correctamente en el IDE y se reconstruyó/compiló de forma exitosa.
 - **Corrección de Registro GPIO (RD7):** Al auditar la guía de ensamblado contra el código de hardware, encontré que el pin `RD7` (Break-Beam RX 2) se estaba leyendo en `gpio_breakbeam_read()`, pero no se había configurado explícitamente como entrada digital (`TRISDbits.TRISD7 = 1`) en `gpio_init()`. Lo corregí de inmediato para garantizar el comportamiento fail-safe del sensor.
-- **Corrección de Carrera de EEPROM en Proteus:** Corregí un error reportado por la simulación de Proteus (`Modification of EECON1 whilst a read or write is in progress`). Esto se debía a que se intentaba leer la EEPROM (`RD = 1`) o deshabilitar la escritura (`WREN = 0`) inmediatamente después de disparar una escritura (`WR = 1`), mientras el ciclo de escritura físico (que toma ~4ms) seguía en curso. Añadí esperas explícitas `while (EECON1bits.WR);` tanto al inicio de `eeprom_read_byte()` como antes de limpiar el bit `WREN` en `eeprom_write_byte()`.
-- **Corrección Crítica de Hardware I2C e INT0 (Proteus/Placa):** Corregí una colisión crítica de pines en el hardware del PIC18F4550.
-  - *Conflicto:* Los pines físicos de la I2C por hardware en el PIC18F4550 están fijos en `RB0` (SDA) y `RB1` (SCL). El código original intentaba usar hardware I2C pero la guía de ensamble declaraba falsamente I2C en `RC3`/`RC4` (hallucinación del pinout de PIC16F877A) mientras configuraba `RB0` como E-stop (`INT0`). Esto provocaba un bloqueo total de la I2C al conectar el E-stop (que mantiene RB0 a tierra) y autodisparos del E-stop por los pulsos de la I2C en funcionamiento.
-  - *Solución en Código:* En `i2c.c` configuré explícitamente `TRISBbits.TRISB0 = 1` y `TRISBbits.TRISB1 = 1`. Moví el E-stop a `RB3` (Pin 36) configurándolo como entrada digital en `gpio.c`.
-  - *Manejo de Paro:* Modifiqué `system.c` para remover el interrupt `INT0` y realizar un sondeo (polling) por software del estado de `RB3` (active-low) cada 1ms dentro de la interrupción del `TMR0` (mucho más seguro y libre de ruidos de I2C).
-  - *Documentación:* Corregí el diagrama ASCII del pinout en `assembly-guide.md` y las referencias en las tablas de conexión del LCD y TCS34725 a los pines de `PORTB`.
-
-
 
 

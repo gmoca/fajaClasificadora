@@ -31,39 +31,39 @@
 
 ```
                  ┌─────────────┐
-        MCLR ────┤1          40├──── RB7 (no conectar)
-   RA0 (AN0) ───┤2          39├──── RB6 (no conectar)
-   RA1 (AN1) ───┤3          38├──── RB5 (no conectar)
-   RA2 (AN2) ───┤4          37├──── RB4 (no conectar)
-   RA3 (AN3) ───┤5          36├──── RB3 — E-stop input (Polled, pull-up)
- RA4 (T0CKI) ───┤6          35├──── RB2 — Encoder (INT2)
-   RA5 (AN4) ───┤7          34├──── RB1 — SCL (I2C Clock)
-   RE0 (AN5) ───┤8          33├──── RB0 — SDA (I2C Data)
-   RE1 (AN6) ───┤9          32├──── VDD (5V Logic)
-   RE2 (AN7) ───┤10         31├──── VSS (GND)
-   VDD Logic ───┤11         30├──── RD7 — Break-beam RX 2
-   VSS Logic ───┤12         29├──── RD6 — Botón DOWN
-OSC1 (20MHz) ───┤13         28├──── RD5 — Botón UP
-OSC2 (20MHz) ───┤14         27├──── RD4 — Break-beam RX 1
-RC0 (Servo2) ───┤15         26├──── RC7 — RX (UART)
-RC1 (Servo1) ───┤16         25├──── RC6 — TX (UART)
-RC2 (PWM ENA) ──┤17         24├──── RC5 (no conectar)
-  RC3 (VPO) ────┤18         23├──── RC4 (no conectar)
- RD0 (IN1 PH1) ─┤19         22├──── RD3 — Break-beam emitter
- RD1 (IN2 PH2) ─┤20         21├──── RD2 — Botón MODE
-                 └─────────────┘
+        RC0 ─────┤1          40├───── VDD (5V)
+        RC1 ─────┤2          39├───── VSS (GND)
+        RC2 ─────┤3          38├───── RD7 — Break-beam RX 2
+        RC3 ─────┤4          37├───── RD6 — Botón DOWN
+        RC4 ─────┤5          36├───── RD5 — Botón UP
+        RC5 ─────┤6          35├───── RD4 — Break-beam RX 1
+        RC6 ─────┤7          34├───── RD3 — Break-beam emitter
+        RC7 ─────┤8          33├───── RD2 — Botón MODE
+    ┌── RB0 ─────┤9          32├───── RD1 — H-bridge IN2
+    │   RB1 ─────┤10         31├───── RD0 — H-bridge IN1
+    │   RB2 ─────┤11         30├───── VSS
+    │   RB3 ─────┤12         29├───── VDD
+    │   RB4 ─────┤13         28├───── OSC1 (20MHz cristal)
+    │   RB5 ─────┤14         27├───── OSC2 (20MHz cristal)
+    │   VSS ─────┤15         26├───── RC0/RC1 (servos)
+    │   VDD ─────┤16         25├───── RC2 (PWM → L298N ENA)
+    │   RA0 ─────┤17         24├───── MCLR (10kΩ → VDD)
+    │   RA1 ─────┤18         23├───── RA6 (PIC16 — no conectar)
+    │   RA2 ─────┤19         22├───── RA5 (break-beam adicional)
+    │   RA3 ─────┤20         21├───── VUSB (dejar NC si no USB)
+                └─────────────┘
 ```
 
 **Notas:**
-- **RB0 = SDA (I2C):** Pin 33 de datos I2C. Requiere pull-up externo a 5V.
-- **RB1 = SCL (I2C):** Pin 34 de reloj I2C. Requiere pull-up externo a 5V.
-- **RB3 = E-stop (Polled):** Pin 36. Monitoreado cada 1ms para seguridad.
-- **RB2 = INT2 (Encoder):** Pin 35.
-- **RC1 = CCP2 (Servo 1):** Pin 16, modo Compare por hardware.
-- **RC0 = GPIO (Servo 2):** Pin 15, software PWM.
-- **RC2 = CCP1 (PWM ENA):** Pin 17 → H-bridge ENA.
-- **RC6 = TX (UART):** Pin 25 → HC-05 RX (vía divisor resistivo).
-- **RC7 = RX (UART):** Pin 26 ← HC-05 TX.
+- RB0 = INT0 (E-stop) — nivel alto fijo, prioridad alta permanente
+- RB2 = INT2 (encoder)
+- RC1 = CCP2 (servo 1) — modo Compare
+- RC0 = GPIO (servo 2 opcional) — software PWM
+- RC2 = CCP1 (PWM) → H-bridge ENA
+- RC3 = SCL (I2C)
+- RC4 = SDA (I2C)
+- RC6 = TX (UART) → HC-05 RX
+- RC7 = RX (UART) ← HC-05 TX
 
 ### Fuente de poder — Tres rieles separados
 
@@ -165,8 +165,8 @@ Normalmente RB0 está en HIGH (5V por pull-up). Al presionar E-stop, RB0 baja a 
 |----------|-----|
 | VIN | 5V (riel lógico) |
 | GND | GND |
-| SCL | RB1 (SCL) |
-| SDA | RB0 (SDA) |
+| SCL | RC3 (SCL) |
+| SDA | RC4 (SDA) |
 | INT | NC (no conectado — se sondea por I2C) |
 | LED | 5V (enciende LED interno) |
 
@@ -176,8 +176,8 @@ Normalmente RB0 está en HIGH (5V por pull-up). Al presionar E-stop, RB0 baja a 
 |---------|-----|
 | VCC | 5V (riel lógico) |
 | GND | GND |
-| SCL | RB1 (SCL) |
-| SDA | RB0 (SDA) |
+| SCL | RC3 (SCL) |
+| SDA | RC4 (SDA) |
 
 Address I2C: **0x27** (por defecto en la mayoría de módulos PCF8574).
 
