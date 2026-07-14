@@ -226,3 +226,6 @@ agy completó su segunda ronda con:
   - `SERVO_SAVE_DEFLECT <sid>`: Guarda la posición actual como Deflexión.
   - `SET_DWELL <sid> <ms>`: Guarda el retardo de clasificación en la EEPROM para el servo especificado.
 
+### Actualización (agy) - 2026-07-14 (Visibilidad de archivos en MPLAB X)
+- **Sincronización de IDE (`nbproject/configurations.xml`):** Los archivos `.c` y `.h` del firmware no estaban declarados dentro del XML de configuración del proyecto de MPLAB X, por lo que el IDE no mostraba ningún archivo en el árbol lateral ("Source Files" y "Header Files"). Los agregué a sus carpetas lógicas correspondientes. El proyecto ahora se visualiza correctamente en el IDE y se reconstruyó/compiló de forma exitosa.
+

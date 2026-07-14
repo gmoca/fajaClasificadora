@@ -4,6 +4,20 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <itemPath>firmware/anti_jam.h</itemPath>
+      <itemPath>firmware/bt_protocol.h</itemPath>
+      <itemPath>firmware/calibration.h</itemPath>
+      <itemPath>firmware/config.h</itemPath>
+      <itemPath>firmware/encoder.h</itemPath>
+      <itemPath>firmware/gpio.h</itemPath>
+      <itemPath>firmware/i2c.h</itemPath>
+      <itemPath>firmware/lcd.h</itemPath>
+      <itemPath>firmware/pwm.h</itemPath>
+      <itemPath>firmware/servo.h</itemPath>
+      <itemPath>firmware/state_machine.h</itemPath>
+      <itemPath>firmware/system.h</itemPath>
+      <itemPath>firmware/tcs34725.h</itemPath>
+      <itemPath>firmware/uart.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
@@ -17,6 +31,20 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>firmware/anti_jam.c</itemPath>
+      <itemPath>firmware/bt_protocol.c</itemPath>
+      <itemPath>firmware/calibration.c</itemPath>
+      <itemPath>firmware/encoder.c</itemPath>
+      <itemPath>firmware/gpio.c</itemPath>
+      <itemPath>firmware/i2c.c</itemPath>
+      <itemPath>firmware/lcd.c</itemPath>
+      <itemPath>firmware/main.c</itemPath>
+      <itemPath>firmware/pwm.c</itemPath>
+      <itemPath>firmware/servo.c</itemPath>
+      <itemPath>firmware/state_machine.c</itemPath>
+      <itemPath>firmware/system.c</itemPath>
+      <itemPath>firmware/tcs34725.c</itemPath>
+      <itemPath>firmware/uart.c</itemPath>
     </logicalFolder>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
@@ -27,7 +55,7 @@
         <targetDevice>PIC18F4550</targetDevice>
         <targetHeader></targetHeader>
         <targetPluginBoard></targetPluginBoard>
-        <platformTool>noID</platformTool>
+        <platformTool>Simulator</platformTool>
         <languageToolchain>XC8</languageToolchain>
         <languageToolchainVersion>3.10</languageToolchainVersion>
         <platform>3</platform>
