@@ -1,78 +1,43 @@
 # pryMicroFaja.X
 
-MPLAB X IDE v6.30 project for **PIC18F4550** microcontroller, compiled with **XC8 v3.10** (C99).
+**PIC18F4550** + **XC8 v3.10** (C99), MPLAB X v6.30. Firmware setup completo, **56.0% flash, 42.7% RAM**.  
+TUI Python con Textual (4 pantallas). Repo: `https://github.com/gmoca/fajaClasificadora` (master).
 
-## Project state
+## Dual-agent workflow (OpenCode + agy)
 
-- Firmware completo, compila y linkea. **56.0% flash, 42.7% RAM**.
-- TUI Python con Textual, 4 pantallas implementadas.
-- Repositorio git: `https://github.com/gmoca/fajaClasificadora` (rama `master`).
+| Before work | During | After work |
+|-------------|--------|------------|
+| Read `CHECKLIST.md`, `Journal.md`, both `HANDOFF_*` files, `AGENTS.md` | Respect file ownership; mark changes with `/* agy: */` or `// OpenCode:` when modifying foreign files; update `CHECKLIST.md` | Run `make -f firmware/Makefile.firmware`; update `Journal.md`; leave handoff in `HANDOFF_PARA_ANTIGRAVITY.md` (if OpenCode) or `HANDOFF_PARA_OPENCODE.md` (if agy). No commits without permission |
 
-## Reglas de sincronización para agentes (OpenCode + agy)
+## File ownership
 
-### ANTES de empezar a trabajar, SIEMPRE:
-1. **Leer `CHECKLIST.md`** — estado global de lo completado y pendiente.
-2. **Leer `Journal.md`** — bitácora de cambios del otro agente.
-3. **Leer `HANDOFF_PARA_OPENCODE.md` y `HANDOFF_PARA_ANTIGRAVITY.md`** — mensajes entre agentes.
-4. **Leer `AGENTS.md`** (este archivo) — reglas y contexto del proyecto.
-
-### Durante el trabajo:
-5. **No sobrescribir archivos del otro agente sin verificar primero.**
-   - Si un archivo tiene lógica del otro agente (e.g. `state_machine.c` es de agy, `system.c` es de OpenCode), editar solo lo que te corresponde.
-   - Si necesitas modificar un archivo ajeno, dejar comentario con `/* agy: ... */` o `// OpenCode: ...` marcando el cambio.
-6. **Actualizar `CHECKLIST.md`** al completar o descubrir un pendiente.
-
-### DESPUÉS de trabajar, SIEMPRE:
-7. **Compilar/verificar** que el proyecto no se rompa:
-   ```bash
-   make -f firmware/Makefile.firmware
-   ```
-8. **Actualizar `Journal.md`** con un resumen de lo que hiciste.
-9. **Dejar handoff** en `HANDOFF_PARA_OPENCODE.md` (si eres agy) o `HANDOFF_PARA_ANTIGRAVITY.md` (si eres OpenCode) si hay algo que el otro necesita saber.
-10. **No commits sin permiso del usuario.**
-
-### Mapa de archivos por agente:
-
-| Archivos | Dueño |
-|----------|-------|
-| `firmware/config.h`, `system.c/.h`, `gpio.c/.h`, `uart.c/.h`, `i2c.c/.h`, `lcd.c/.h`, `tcs34725.c/.h`, `pwm.c/.h`, `servo.c/.h`, `encoder.c/.h`, `main.c`, `Makefile.firmware` | **OpenCode** |
-| `firmware/state_machine.c/.h`, `bt_protocol.c/.h`, `calibration.c/.h`, `anti_jam.c/.h` | **agy** |
-| `tui_app/protocol.py` | **Compartido** |
-| `tui_app/app.py`, `connect.py` | **OpenCode** |
-| `tui_app/screens/*.py` | **agy** |
-
----
+| Owner | Files |
+|-------|-------|
+| **OpenCode** | `firmware/config.h`, `system.{c,h}`, `gpio.{c,h}`, `uart.{c,h}`, `i2c.{c,h}`, `lcd.{c,h}`, `tcs34725.{c,h}`, `pwm.{c,h}`, `servo.{c,h}`, `encoder.{c,h}`, `main.c`, `Makefile.firmware`; `tui_app/app.py`, `connect.py` |
+| **agy** | `firmware/state_machine.{c,h}`, `bt_protocol.{c,h}`, `calibration.{c,h}`, `anti_jam.{c,h}`; `tui_app/screens/*.py` |
+| **Shared** | `tui_app/protocol.py` |
 
 ## Build
 
-### Firmware (faster, standalone)
-```bash
-make -f firmware/Makefile.firmware
-```
-Output: `dist/default/production/pryMicroFaja.X.production.hex`
+| Target | Command | Output |
+|--------|---------|--------|
+| Firmware (fast) | `make -f firmware/Makefile.firmware` | `dist/default/production/pryMicroFaja.X.production.hex` |
+| MPLAB X | `make build` / `make clean` / `make clobber` | same `.hex` |
+| TUI | `cd tui_app && pip install -e . && python app.py` | — |
 
-### Via MPLAB X (full IDE build)
-```bash
-make build          # production .hex → dist/default/production/pryMicroFaja.X.production.hex
-make clean          # rm -rf build/ dist/
-make clobber        # clean all
-```
+Build requires MPLAB X v6.30 + XC8 v3.10 at `C:\Program Files\Microchip\...`.  
+`nbproject/Makefile-local-default.mk` holds per-host tool paths — must exist before `make build`.  
+Source files tracked in `nbproject/configurations.xml` (add files there or via IDE).
 
-Build requires MPLAB X v6.30 + XC8 v3.10 installed at the standard paths (`C:\Program Files\Microchip\...`). The IDE auto-regenerates `Makefile-local-default.mk` per-host; that file holds tool paths and must exist before `make build` will work.
+## XC8 v3.10 quirks (clang-based)
 
-### TUI app
-```bash
-cd tui_app && pip install -e .
-python app.py
-```
-
-## Adding source files
-
-Source files are tracked in `nbproject/configurations.xml` (the `<itemPath>` entries inside `<SourceFiles>` and `<HeaderFiles>` logical folders). After adding files via MPLAB X, the IDE regenerates the `SOURCEFILES`/`OBJECTFILES` variables in `nbproject/Makefile-default.mk`.
+- **`eeprom_write()`/`eeprom_read()`** — removed. Use direct EEDATA/EEADR/EECON1/EECON2 register access.
+- **`utoa()`/`ultoa()`** — removed (were HI-TECH C extensions). Use custom `u16_to_str`/`u32_to_str` to avoid `sprintf` flash cost.
+- **T3CCP2 = 0** — CCP2 defaults to TMR3 on PIC18F4550; force `T3CONbits.T3CCP2 = 0` for TMR1 binding (required for servo 1).
+- **CCP2 modes for servo** — use `0b0101` (force LOW) and `0b0111` (special event + force HIGH), NOT PWM modes `0b1000`/`0b1001`.
+- **Stack** — `-mstack=compiled:auto:auto:auto` eliminates hardware stack need, saves RAM.
+- **EEPROM race condition** — always `while (EECON1bits.WR);` before read or before clearing WREN after write (~4ms cycle).
 
 ## Conventions
 
-- **C99** (`-std=c99`), **dwarf-3** debug format.
-- Optimization: `-O0` (disabled, `disable-optimizations=true`).
-- Output: COFF+ELF hybrid (`-mcof,+elf`), with `.hex` for production.
-- No peripheral library linked (`link-in-peripheral-library=false`).
+- C99 (`-std=c99`), dwarf-3, `-O0`, COFF+ELF hybrid output, no peripheral library linked.
