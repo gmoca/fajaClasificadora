@@ -21,6 +21,7 @@ void uart_init(void) {
 
     PIE1bits.RCIE = 1;
     IPR1bits.RCIP = 0;
+    IPR1bits.TXIP = 0;  // Set TX interrupt to low priority to match isr_low
 }
 
 void uart_send_byte(uint8_t b) {

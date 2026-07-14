@@ -23,6 +23,7 @@ void system_init(void) {
     TMR0L = TMR0_RELOAD & 0xFF;
     T0CONbits.TMR0ON = 1;
     INTCONbits.TMR0IE = 1;
+    INTCON2bits.TMR0IP = 0;  // Set TMR0 priority to low to match isr_low handler
     INTCONbits.TMR0IF = 0;
 
     T1CONbits.TMR1CS = 0;
