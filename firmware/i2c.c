@@ -4,6 +4,9 @@
 #define SSPADD_VAL 49
 
 void i2c_init(void) {
+    TRISBbits.TRISB0 = 1;  // SDA as input
+    TRISBbits.TRISB1 = 1;  // SCL as input
+    
     SSPCON1bits.SSPM = 0b1000;
     SSPCON1bits.SSPEN = 1;
     SSPADD = SSPADD_VAL;

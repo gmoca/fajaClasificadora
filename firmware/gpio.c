@@ -22,8 +22,8 @@ void gpio_init(void) {
     TRISDbits.TRISD4 = 1;
     TRISDbits.TRISD7 = 1;
 
-    TRISBbits.TRISB0 = 1;
-    TRISBbits.TRISB2 = 1;
+    TRISBbits.TRISB3 = 1;  // E-stop input (RB3)
+    TRISBbits.TRISB2 = 1;  // Encoder input (RB2)
 
     gpio_breakbeam_emitter(1);
 

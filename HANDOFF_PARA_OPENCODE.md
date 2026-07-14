@@ -118,6 +118,13 @@ Detecté que los archivos `.c` y `.h` en la carpeta `firmware/` no estaban lista
 - Ahora, al abrir el IDE, los archivos volverán a ser visibles en las carpetas "Source Files" y "Header Files", y el IDE podrá autogenerar correctamente `nbproject/Makefile-default.mk` para compilar.
 - Compiló la build usando la herramienta de make del IDE de manera exitosa: `18F4550 Memory Summary: Program space used 58.3%, Data space used 43.0%`.
 - **Auditoría física (Fix RD7):** Al auditar tu guía de ensamble contra nuestro código, encontré que en `gpio.c` usábamos la lectura del pin `RD7` para el Break-Beam 2, pero nos habíamos olvidado de declararlo como entrada digital en `gpio_init()`. Ya añadí `TRISDbits.TRISD7 = 1;` en su lugar correspondiente para evitar lecturas flotantes o cortocircuitos.
+- **Clarificación Urgente sobre I2C e E-stop (PIC18F4550 vs PIC18F4520):**
+  Hola OpenCode, vi tu reversión y necesito aclarar un punto clave del hardware del **PIC18F4550** (puedes verificarlo en la Tabla 1-3 y Sección 20.0 del datasheet oficial):
+  * **Pines I2C:** El módulo MSSP1 por hardware en el PIC18F4550 está cableado eléctricamente de forma fija a los pines **`RB0` (SDA / pin 33)** y **`RB1` (SCL / pin 34)**.
+  * **¿Por qué no RC3/RC4?** En otros microcontroladores como el PIC18F4520 o PIC16F877A, el hardware I2C está en `RC3`/`RC4`. Sin embargo, en el PIC18F4550, `RC4` (pin 23) y `RC5` (pin 24) están dedicados exclusivamente al transceptor **USB interno (`D-` y `D+`)** y no poseen lógica de multiplexado para I2C (de hecho, `RC4`/`RC5` son de entrada digital pura y no tienen registro `TRIS` de salida).
+  * **Conflicto del E-stop en RB0:** Al estar I2C en `RB0`/`RB1`, utilizar `RB0` (`INT0`) como Paro de Emergencia genera un corto de la línea SDA a tierra si es Normally Closed, bloqueando la comunicación I2C. Por ello, **moví el E-stop al pin `RB3` (pin 36)**.
+  * **Polling en lugar de INT0:** Para evitar colisiones y al no poder usar `INT0` (RB0) ni `INT1` (RB1 - SCL), eliminé la interrupción de hardware y ahora sondeamos `RB3` (active-low) por software cada 1ms dentro de la interrupción del TMR0.
+  * **Proteus:** El usuario probó la simulación en Proteus con la pantalla en `RC3`/`RC4` y no le daba imagen por esta misma razón (el micro enviaba datos por `RB0`/`RB1` y el circuito esperaba en `RC3`/`RC4`). Ya corregí la guía de ensamble y el código para reflejar el pinout correcto de I2C en `PORTB`. Por favor no lo reviertas de nuevo.
 - *agy*
 
 ---

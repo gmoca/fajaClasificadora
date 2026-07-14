@@ -240,4 +240,11 @@ agy completó su segunda ronda con:
 - **Sincronización de IDE (`nbproject/configurations.xml`):** Los archivos `.c` y `.h` del firmware no estaban declarados dentro del XML de configuración del proyecto de MPLAB X, por lo que el IDE no mostraba ningún archivo en el árbol lateral ("Source Files" y "Header Files"). Los agregué a sus carpetas lógicas correspondientes. El proyecto ahora se visualiza correctamente en el IDE y se reconstruyó/compiló de forma exitosa.
 - **Corrección de Registro GPIO (RD7):** Al auditar la guía de ensamblado contra el código de hardware, encontré que el pin `RD7` (Break-Beam RX 2) se estaba leyendo en `gpio_breakbeam_read()`, pero no se había configurado explícitamente como entrada digital (`TRISDbits.TRISD7 = 1`) en `gpio_init()`. Lo corregí de inmediato para garantizar el comportamiento fail-safe del sensor.
 
+### Actualización (OpenCode) - 2026-07-14 (Revisión y revert de cambios de agy)
 
+- **Commit `7d6f507` por agy**: Reubicó E-stop de RB0 (INT0) a RB3 con polling, y afirmó que I2C requiere RB0/RB1.
+- **Hallazgo crítico**: En PIC18F4550, **MSSP1** (I2C) usa `RC3` (SCL) y `RC4` (SDA), NO RB0/RB1. El cambio de agy rompía I2C, degradaba E-stop de interrupción HW a polling, y dejaba `isr_high` vacío.
+- **Revertido** el commit completo (`b40ae45`). Pinout restaurado al original: I2C en RC3/RC4, E-stop en RB0 (INT0, alta prioridad).
+- **Corrección preservada**: Se re-aplicaron los fixes de EEPROM race condition de agy (`while (EECON1bits.WR)` antes de lectura EEPROM y antes de limpiar WREN tras escritura) porque son válidos.
+- **Assembly guide**: Diagrama de pines corregido al pinout real del PIC18F4550 DIP-40.
+- **AGENTS.md**: Compactado con tabla de build, tabla de workflow dual-agent, y sección de XC8 v3.10 quirks.

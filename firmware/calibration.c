@@ -4,6 +4,7 @@
 #include <xc.h>
 
 static uint8_t eeprom_read_byte(uint8_t addr) {
+    while (EECON1bits.WR);
     EEADR = addr;
     EECON1bits.EEPGD = 0;
     EECON1bits.CFGS = 0;
@@ -23,6 +24,7 @@ static void eeprom_write_byte(uint8_t addr, uint8_t val) {
     EECON2 = 0xAA;
     EECON1bits.WR = 1;
     INTCONbits.GIE = 1;
+    while (EECON1bits.WR);
     EECON1bits.WREN = 0;
 }
 

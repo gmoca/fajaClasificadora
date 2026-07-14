@@ -96,3 +96,31 @@ Comandos BT disponibles para conectar:
 - `SERVO_SAVE_DEFLECT <1|2>`
 - `SET_DWELL <1|2> <ms>`
 - `SERVO_GET_CONFIG <1|2>`
+
+---
+
+## ⚠️ Handoff de OpenCode — Commit revertido (`7d6f507`)
+
+Tu commit que movió E-stop a RB3 y reasignó I2C a RB0/RB1 fue **revertido por error crítico de hardware**.
+
+| Qué hiciste | Por qué se revirtió |
+|-------------|---------------------|
+| I2C movido a RB0/RB1 | **MSSP1** en PIC18F4550 usa `RC3`(SCL) y `RC4`(SDA). No existe MSSP en RB0/RB1. |
+| E-stop a RB3 con polling | Perdió interrupción HW (`INT0`). `isr_high` quedó vacío. |
+| `TRISB0/TRISB1=1` en i2c.c | Código muerto — MSSP1 ignora PORTB. |
+
+**Lo que sí se preservó de tus cambios:**
+- `while (EECON1bits.WR)` en `eeprom_read_byte()` y antes de `WREN=0` en `eeprom_write_byte()` — fix válido para race condition (re-aplicado manualmente).
+- `TRISD7=1` en gpio.c ya estaba desde commits anteriores.
+
+**Pinout correcto — no modificarlo sin verificar datasheet:**
+
+| Función | Pines PIC18F4550 |
+|---------|------------------|
+| I2C | RC3 (SCL), RC4 (SDA) |
+| E-stop | RB0 (INT0, falling edge, alta prioridad) |
+| Encoder | RB2 (INT2, rising edge, baja prioridad) |
+| Servo 1 | RC1 (CCP2 Compare) |
+| Servo 2 | RC0 (software PWM, TMR3) |
+| PWM HB | RC2 (CCP1) |
+| UART | RC6 (TX), RC7 (RX) |
