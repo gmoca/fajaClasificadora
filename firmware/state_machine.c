@@ -12,12 +12,6 @@
 #include "anti_jam.h"
 #include <string.h>
 
-static void safe_delay_ms(uint16_t ms) {
-    while (ms--) {
-        __delay_ms(1);
-    }
-}
-
 static void u16_to_str(char *buf, uint16_t val) {
     char tmp[6];
     uint8_t i = 0;
@@ -310,9 +304,7 @@ void state_machine_run(void) {
                 menu_index = 0;
                 load_menu_values();
                 lcd_clear();
-                lcd_print("MENU CALIB");
-                safe_delay_ms(800);
-                lcd_clear();
+                display_menu();
                 idle_long_pressed = 1;
                 gpio_button_pressed(BTN_MODE); // Consume the edge
             }
@@ -451,11 +443,14 @@ void state_machine_run(void) {
             }
             
             if (system_ticks - last_bt_activity > 5000 || last_bt_activity == 0) {
+                static uint8_t lcd_needs_update = 0;
+                
                 if (!menu_active) {
                     menu_active = 1;
                     menu_index = 0;
                     load_menu_values();
                     lcd_clear();
+                    lcd_needs_update = 1;
                 }
                 
                 // Debounced long-press and short-press logic
@@ -473,19 +468,14 @@ void state_machine_run(void) {
                             state = ST_IDLE;
                             menu_active = 0;
                             lcd_clear();
-                            lcd_print("MENU SALIDA");
-                            safe_delay_ms(800);
-                            lcd_clear();
                             lcd_print("IDLE");
                             if (gpio_button_state(BTN_MODE)) {
                                 ignore_mode_until_release = 1;
                             }
                         } else {
                             save_current_menu_value();
-                            lcd_clear();
-                            lcd_print("GUARDADO!");
-                            safe_delay_ms(800);
-                            lcd_clear();
+                            lcd_set_cursor(0, 0);
+                            lcd_print("VALOR GUARDADO  ");
                         }
                         mode_long_pressed = 1;
                     }
@@ -493,7 +483,7 @@ void state_machine_run(void) {
                     if (mode_was_pressed) {
                         if (!mode_long_pressed && (now - mode_press_start > 50)) {
                             menu_index = (menu_index + 1) % 8;
-                            lcd_clear();
+                            lcd_needs_update = 1;
                         }
                         mode_was_pressed = 0;
                     }
@@ -501,13 +491,15 @@ void state_machine_run(void) {
                 
                 if (gpio_button_pressed(BTN_UP)) {
                     adjust_menu_value(1);
+                    lcd_needs_update = 1;
                 }
                 if (gpio_button_pressed(BTN_DOWN)) {
                     adjust_menu_value(-1);
+                    lcd_needs_update = 1;
                 }
                 
-                if (now - last_lcd_update >= 200) {
-                    last_lcd_update = now;
+                if (lcd_needs_update) {
+                    lcd_needs_update = 0;
                     display_menu();
                 }
             } else {
