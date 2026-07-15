@@ -16,7 +16,7 @@ void servo_init(void) {
     LATCbits.LATC1 = 0;
     TRISCbits.TRISC1 = 0;
 
-    CCP2CONbits.CCP2M = 0b0101;
+    CCP2CONbits.CCP2M = 0b1001;  // Compare mode, force low on match
     CCPR2 = 0;
     PIE2bits.CCP2IE = 1;
     IPR2bits.CCP2IP = 0;
@@ -59,17 +59,17 @@ void servo_ccp2_isr(void) {
 
     if (phase == 0) {
         LATCbits.LATC1 = 1;
-        CCP2CONbits.CCP2M = 0b0101;
+        CCP2CONbits.CCP2M = 0b1001;  // Compare mode, force low on match
         CCPR2 = servo1_pulse;
         phase = 1;
     } else if (phase == 1) {
-        CCP2CONbits.CCP2M = 0b0111;
+        CCP2CONbits.CCP2M = 0b1011;  // Compare mode, trigger special event (reset TMR1)
         CCPR2 = SERVO_FRAME_TICKS;
         phase = 2;
     } else {
         phase = 0;
         LATCbits.LATC1 = 1;
-        CCP2CONbits.CCP2M = 0b0101;
+        CCP2CONbits.CCP2M = 0b1001;  // Compare mode, force low on match
         CCPR2 = servo1_pulse;
     }
 }
