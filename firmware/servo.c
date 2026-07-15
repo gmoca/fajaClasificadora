@@ -5,6 +5,7 @@ static volatile uint16_t servo1_pulse = SERVO_PULSE_NEUT;
 static volatile uint8_t  servo1_ready = 0;
 
 static volatile uint16_t servo2_pulse = SERVO_PULSE_NEUT;
+static volatile uint16_t servo2_steps = 60;  // 1.5ms neutral default (60 * 25us = 1.5ms)
 
 /* TMR3 reload for 25 µs @ prescaler 1:1, Fcyc = 5 MHz (200 ns/tick)
  * 25 µs / 200 ns = 125 ticks → reload = 65536 - 125 = 65411 */
@@ -41,10 +42,12 @@ void servo_set_angle(uint8_t servo_id, uint16_t angle_deg) {
     if (angle_deg > 180) angle_deg = 180;
     uint16_t pulse = SERVO_PULSE_MIN
         + ((uint32_t)(SERVO_PULSE_MAX - SERVO_PULSE_MIN) * angle_deg / 180);
-    if (servo_id == 1)
+    if (servo_id == 1) {
         servo1_pulse = pulse;
-    else
+    } else {
         servo2_pulse = pulse;
+        servo2_steps = (uint16_t)(((uint32_t)pulse * 2UL) / 125);
+    }
 }
 
 uint16_t servo_get_angle(uint8_t servo_id) {
@@ -70,10 +73,7 @@ void servo_ccp2_isr(void) {
 }
 
 /* Servo 2 — software PWM via TMR3 ISR (25 µs/tick)
- * servo2_pulse (400 ns ticks) is converted to 25 µs steps:
- *   step = tick * 400 / 25000 = tick / 62.5 → (tick * 2) / 125
- *   pulse 1.0 ms (2500) → 40 steps, 2.0 ms (5000) → 80 steps
- *   800 steps × 25 µs = 20 ms frame */
+ * Precalculated steps used to avoid division inside ISR */
 void servo_timer3_isr(void) {
     static uint16_t tick = 0;
     tick++;
@@ -81,7 +81,7 @@ void servo_timer3_isr(void) {
         tick = 0;
         LATCbits.LATC0 = 1;
     }
-    if (tick == (uint16_t)((servo2_pulse * 2UL) / 125))
+    if (tick == servo2_steps)
         LATCbits.LATC0 = 0;
     TMR3H = (uint8_t)(SERVO2_TMR3_RELOAD >> 8);
     TMR3L = (uint8_t)(SERVO2_TMR3_RELOAD & 0xFF);

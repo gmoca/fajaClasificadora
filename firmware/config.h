@@ -13,6 +13,7 @@
 #pragma config PWRT = ON
 #pragma config MCLRE = OFF
 #pragma config PBADEN = OFF
+#pragma config CCP2MX = ON
 #pragma config STVREN = ON
 #pragma config LVP = OFF
 #pragma config DEBUG = OFF
