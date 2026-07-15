@@ -6,8 +6,15 @@
 #define TCS34725_CONTROL  0x0F
 #define TCS34725_CDATAL   0x14
 
+static uint8_t is_present = 0;
+
+uint8_t tcs34725_is_present(void) {
+    return is_present;
+}
+
 uint8_t tcs34725_init(void) {
     uint8_t id;
+    is_present = 0;
     if (!i2c_read(TCS34725_ADDR, TCS34725_CMD | TCS34725_ID, &id, 1))
         return 0;
     if (id != 0x44 && id != 0x4D)
@@ -19,6 +26,7 @@ uint8_t tcs34725_init(void) {
 
     tcs34725_set_integration_time(0xEB);
     tcs34725_set_gain(1);
+    is_present = 1;
     return 1;
 }
 

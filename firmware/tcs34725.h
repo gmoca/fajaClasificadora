@@ -12,6 +12,7 @@ typedef struct {
 #define TCS34725_ID     0x12
 
 uint8_t tcs34725_init(void);
+uint8_t tcs34725_is_present(void);
 void    tcs34725_get_raw(color_rgbc_t *c);
 void    tcs34725_set_gain(uint8_t gain);
 void    tcs34725_set_integration_time(uint8_t cycles);

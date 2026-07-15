@@ -66,10 +66,6 @@ void __interrupt(low_priority) isr_low(void) {
     if (PIR1bits.RCIF || (PIR1bits.TXIF && PIE1bits.TXIE)) {
         uart_isr_handler();
     }
-    if (PIR2bits.CCP2IF) {
-        PIR2bits.CCP2IF = 0;
-        servo_ccp2_isr();
-    }
     if (PIR2bits.TMR3IF) {
         PIR2bits.TMR3IF = 0;
         servo_timer3_isr();

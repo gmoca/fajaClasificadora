@@ -277,7 +277,7 @@ void state_machine_run(void) {
             break;
 
         case ST_RUNNING:
-            if (now % 100 == 0) {
+            if (now % 100 == 0 && tcs34725_is_present()) {
                 color_rgbc_t color;
                 tcs34725_get_raw(&color);
                 int8_t idx = color_match_index(&color);
