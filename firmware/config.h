@@ -29,8 +29,7 @@
 #define FOSC_HZ     20000000UL
 #define FCYC_HZ     (FOSC_HZ / 4)
 
-#define BAUD_RATE   115200UL
-#define SPBRG_VAL   ((FOSC_HZ / (4 * BAUD_RATE)) - 1)
+#define SPBRG_VAL   42  // 115200 baud at 20MHz (exact integer calculation)
 
 #define TMR0_RELOAD 64911
 
