@@ -309,6 +309,7 @@ void state_machine_run(void) {
                         uart_send_str("STATE:run\n");
                         lcd_clear();
                         lcd_print("RUNNING");
+                        gpio_button_pressed(BTN_MODE); // Consume/clear edge to prevent bounce-back
                     }
                 }
                 idle_was_pressed = 0;
