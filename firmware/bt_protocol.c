@@ -19,6 +19,25 @@ void bt_protocol_init(void) {
     last_bt_activity = 0;
 }
 
+static void u16_to_str(char *buf, uint16_t val) {
+    char tmp[6];
+    uint8_t i = 0;
+    if (val == 0) {
+        buf[0] = '0';
+        buf[1] = '\0';
+        return;
+    }
+    while (val > 0 && i < 5) {
+        tmp[i++] = (char)('0' + (val % 10));
+        val /= 10;
+    }
+    uint8_t j = 0;
+    while (i > 0) {
+        buf[j++] = tmp[--i];
+    }
+    buf[j] = '\0';
+}
+
 void bt_protocol_process(void) {
     while (uart_available()) {
         uint8_t c = uart_read_byte();
