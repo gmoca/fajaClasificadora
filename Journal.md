@@ -258,5 +258,11 @@ agy completó su segunda ronda con:
   - Diagnosticamos que el escáner I2C detectaba de forma errónea únicamente la dirección `0x08` debido a un cortocircuito en el pin `RB0` (SDA), provocado por el conexionado previo del botón E-stop Normally Closed y un cruce accidental de cables (SDA y SCL conectados a la inversa).
   - Al reubicar el E-stop al pin `RB3` y conectar `RB0` con `SDA` y `RB1` con `SCL` en el circuito, el bus I2C quedó limpio. El escáner detectó con éxito los dispositivos reales en el bus.
   - Dado que los pines de dirección `A0`, `A1`, `A2` de la pantalla se conectaron directamente a 5V en Proteus, la dirección real del LCD se estableció en `0x27`. Se actualizó la constante `LCD_ADDR` en `lcd.h` a `0x27` para coincidir con este direccionamiento físico. Se retiró el código de depuración del escáner en `main.c` para dejar el firmware limpio y listo para producción.
+- **Implementación de Modo de Diagnóstico en Arranque (`main.c` y `gpio.c`):**
+  - Implementé `debug_print()` y `i2c_scan()` en `main.c`. El flujo de arranque ahora reporta paso a paso antes y después de cada inicialización mediante la UART.
+  - El escáner de I2C (`i2c_scan()`) se ejecuta al arrancar informando las direcciones activas en el bus e indicando si está vacío (`I2C BUS EMPTY`).
+  - Agregué mensajes de error dedicados en caso de fallo de detección de la LCD (`[ERROR] LCD I2C ACK failed`) o del sensor de color (`[ERROR] TCS34725 not detected`).
+  - Agregué `ADCON1 = 0x0F;` al inicio de `gpio_init()` en `gpio.c` para deshabilitar explícitamente las funciones analógicas en todos los puertos (asegurando el funcionamiento digital de `RB0` y `RB1`).
+
 
 
