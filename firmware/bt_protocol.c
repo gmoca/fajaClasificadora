@@ -32,30 +32,39 @@ void bt_protocol_process(void) {
             cmd_pos = 0;
 
             if (strcmp(cmd_buf, "START") == 0) {
+                uart_send_str("CMD_OK:START\n");
                 state_machine_start();
             }
             else if (strcmp(cmd_buf, "STOP") == 0) {
+                uart_send_str("CMD_OK:STOP\n");
                 state_machine_estop();
             }
             else if (strncmp(cmd_buf, "SET_SPEED ", 10) == 0) {
                 int val = atoi(cmd_buf + 10);
                 if (val >= 0 && val <= 255) {
                     pwm_hbridge_set_duty((uint8_t)val);
+                    uart_send_str("CMD_OK:SET_SPEED\n");
+                } else {
+                    uart_send_str("CMD_ERR:SPEED_RANGE\n");
                 }
             }
             else if (strcmp(cmd_buf, "STATUS") == 0) {
                 uart_send_str("STATUS_RESP:0,0,1,0,0,0\n");
             }
             else if (strcmp(cmd_buf, "CALIBRATE") == 0) {
+                uart_send_str("CMD_OK:CALIBRATE\n");
                 calibration_start();
             }
             else if (strcmp(cmd_buf, "TEST_ENTER") == 0) {
+                uart_send_str("CMD_OK:TEST_ENTER\n");
                 state_machine_test_enter();
             }
             else if (strcmp(cmd_buf, "TEST_EXIT") == 0) {
+                uart_send_str("CMD_OK:TEST_EXIT\n");
                 state_machine_test_exit();
             }
             else if (strcmp(cmd_buf, "TEST_MOTOR") == 0) {
+                uart_send_str("CMD_OK:TEST_MOTOR\n");
                 state_machine_test_motor();
             }
             else if (strncmp(cmd_buf, "SERVO ", 6) == 0) {
@@ -66,12 +75,31 @@ void bt_protocol_process(void) {
                     uint16_t ang = atoi(sp1 + 1);
                     if ((sid == 1 || sid == 2) && ang <= 180) {
                         servo_set_angle(sid, ang);
+                        char resp[32];
+                        strcpy(resp, "CMD_OK:SERVO ");
+                        char sid_str[4];
+                        u16_to_str(sid_str, sid);
+                        strcat(resp, sid_str);
+                        strcat(resp, "\n");
+                        uart_send_str(resp);
+                    } else {
+                        uart_send_str("CMD_ERR:SERVO_VAL\n");
                     }
+                } else {
+                    uart_send_str("CMD_ERR:SERVO_FMT\n");
                 }
             }
             else if (strncmp(cmd_buf, "SET_MODE ", 9) == 0) {
-                if (strcmp(cmd_buf + 9, "AUTO") == 0) state_machine_set_mode(1);
-                else if (strcmp(cmd_buf + 9, "MANUAL") == 0) state_machine_set_mode(0);
+                if (strcmp(cmd_buf + 9, "AUTO") == 0) {
+                    state_machine_set_mode(1);
+                    uart_send_str("CMD_OK:SET_MODE AUTO\n");
+                }
+                else if (strcmp(cmd_buf + 9, "MANUAL") == 0) {
+                    state_machine_set_mode(0);
+                    uart_send_str("CMD_OK:SET_MODE MANUAL\n");
+                } else {
+                    uart_send_str("CMD_ERR:MODE_VAL\n");
+                }
             }
             else if (strncmp(cmd_buf, "SET_SPACING ", 12) == 0) {
                 // Minimum encoder pulses spacing
@@ -188,6 +216,9 @@ void bt_protocol_process(void) {
                 buf[7] = '\n';
                 buf[8] = '\0';
                 uart_send_str(buf);
+            }
+            else {
+                uart_send_str("CMD_ERR:UNKNOWN\n");
             }
         } else {
             if (cmd_pos < sizeof(cmd_buf) - 1) {
