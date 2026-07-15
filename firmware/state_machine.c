@@ -95,6 +95,12 @@ static uint16_t menu_ppr = 20;
 static uint8_t menu_index = 0;
 static uint8_t menu_active = 0;
 
+static uint32_t idle_press_start = 0;
+static uint8_t idle_was_pressed = 0;
+static uint8_t idle_long_pressed = 0;
+static uint8_t ignore_mode_until_release = 0;
+static uint8_t first_run = 1;
+
 static void load_menu_values(void) {
     menu_s1_home = calibration_read_word(EEPROM_ADDR_SERVO1_HOME);
     menu_s1_defl = calibration_read_word(EEPROM_ADDR_SERVO1_DEFL);
@@ -274,11 +280,7 @@ void state_machine_run(void) {
         lcd_print("!EMERGENCY STOP!");
     }
 
-    static uint32_t idle_press_start = 0;
-    static uint8_t idle_was_pressed = 0;
-    static uint8_t idle_long_pressed = 0;
-    static uint8_t ignore_mode_until_release = 0;
-    static uint8_t first_run = 1;
+
 
     if (first_run) {
         first_run = 0;
@@ -333,6 +335,8 @@ void state_machine_run(void) {
             uart_send_str("STATE:idle\n");
             lcd_clear();
             lcd_print("IDLE");
+            idle_was_pressed = 0;
+            idle_long_pressed = 0;
             if (gpio_button_state(BTN_MODE)) {
                 ignore_mode_until_release = 1;
             }
@@ -341,6 +345,8 @@ void state_machine_run(void) {
             uart_send_str("STATE:idle\n");
             lcd_clear();
             lcd_print("IDLE - OK");
+            idle_was_pressed = 0;
+            idle_long_pressed = 0;
             if (gpio_button_state(BTN_MODE)) {
                 ignore_mode_until_release = 1;
             }
@@ -469,6 +475,8 @@ void state_machine_run(void) {
                             menu_active = 0;
                             lcd_clear();
                             lcd_print("IDLE");
+                            idle_was_pressed = 0;
+                            idle_long_pressed = 0;
                             if (gpio_button_state(BTN_MODE)) {
                                 ignore_mode_until_release = 1;
                             }
