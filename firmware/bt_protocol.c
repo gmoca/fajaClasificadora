@@ -61,7 +61,7 @@ void bt_protocol_process(void) {
             else if (strncmp(cmd_buf, "SET_SPEED ", 10) == 0) {
                 int val = atoi(cmd_buf + 10);
                 if (val >= 0 && val <= 255) {
-                    pwm_hbridge_set_duty((uint8_t)val);
+                    state_machine_set_speed((uint8_t)val);
                     uart_send_str("CMD_OK:SET_SPEED\n");
                 } else {
                     uart_send_str("CMD_ERR:SPEED_RANGE\n");

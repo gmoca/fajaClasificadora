@@ -31,6 +31,11 @@ class DashboardScreen(Screen):
             yield Button("Configuración", id="btn-config")
             yield Button("Visor Logs", id="btn-logs")
             yield Button("Modo TEST", id="btn-test")
+            
+        with Horizontal(id="dash-speed-control"):
+            yield Static("Ajustar PWM Motor (0-255):", classes="panel-title")
+            from textual.widgets import Input
+            yield Input(placeholder="180", id="input-speed", restrict=r"^\d{0,3}$")
 
     def watch_state(self, new_state: str) -> None:
         try:
@@ -68,3 +73,16 @@ class DashboardScreen(Screen):
             self.app.push_screen("logs")
         elif button_id == "btn-test":
             self.app.push_screen("test")
+
+    def on_input_submitted(self, event) -> None:
+        if event.input.id == "input-speed":
+            try:
+                val = int(event.value)
+                if 0 <= val <= 255:
+                    self.app.bt_send(f"SET_SPEED {val}")
+                    self.log_event(f"TUI: Enviado SET_SPEED {val}")
+                else:
+                    self.log_event("TUI: Error - Velocidad debe ser 0-255")
+            except ValueError:
+                pass
+            event.input.value = ""

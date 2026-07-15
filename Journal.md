@@ -308,7 +308,13 @@ agy completó su segunda ronda con:
     2. Agregué una opción de salida ("SALIR") como el 8vo elemento del menú local (`menu_index = 7`). Al seleccionarla y hacer una pulsación larga en `BTN_MODE`, el microcontrolador sale de `ST_TEST` y regresa al estado `ST_IDLE` de manera 100% autónoma.
     3. Eliminé la espera de 5 segundos tras el arranque para entrar al menú local si no ha habido comunicación Bluetooth (`last_bt_activity == 0`), permitiendo un acceso instantáneo al encender el equipo.
 
-
+### Actualización (agy) - 2026-07-15 (Persistencia de Velocidad y UI de Colores)
+- **Persistencia de Velocidad del Motor:**
+  - **Firmware:** Agregué `state_machine_set_speed()` en `state_machine.c` y modifiqué `bt_protocol.c` para que el comando `SET_SPEED` guarde la velocidad en la variable `motor_speed`. Ahora la faja "recuerda" la última velocidad solicitada al arrancar de nuevo.
+  - **TUI Dashboard:** Modifiqué `dashboard.py` para incluir una interfaz de ingreso directo del PWM del Motor (0-255), enviando el comando automáticamente.
+- **Auto-registro de Colores en EEPROM:**
+  - **Firmware:** Modifiqué `calibration_save_color()` en `calibration.c` para que al guardar un nuevo umbral de color con el comando `SET_THRESHOLD`, actualice automáticamente el contador interno `EEPROM_ADDR_NUM_CLR` si es necesario. Esto evita el bug lógico donde `num_colors` siempre era 0 al arrancar.
+  - **TUI ConfigScreen:** Implementé una nueva sección "Registro de Colores (Umbrales)" en `config.py`. Proporciona campos visuales para ingresar el Índice y los valores Mín/Máx de Rojo, Verde y Azul (RGB). El botón de guardado compone y despacha el comando `SET_THRESHOLD` de forma transparente.
 
 
 

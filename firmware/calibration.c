@@ -78,6 +78,10 @@ void calibration_save_color(uint8_t idx, color_config_t *cfg) {
     for (uint8_t i = 0; i < sizeof(color_config_t); i++) {
         eeprom_write_byte(addr + i, ptr[i]);
     }
+    uint8_t num = eeprom_read_byte(EEPROM_ADDR_NUM_CLR);
+    if (num == 0xFF || idx >= num) {
+        eeprom_write_byte(EEPROM_ADDR_NUM_CLR, idx + 1);
+    }
 }
 
 uint8_t calibration_load_all(color_config_t *buf, uint8_t max) {

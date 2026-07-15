@@ -32,6 +32,26 @@ class ConfigScreen(Screen):
                 yield Input(placeholder="Ej: 500", id="inp-servo-dwell")
                 yield Button("Guardar Dwell", id="btn-save-dwell")
                 
+            yield Static("Registro de Colores (Umbrales)", classes="panel-title")
+            with Horizontal(classes="config-row"):
+                yield Label("ID (0=S1, 1=S2):")
+                yield Input(placeholder="Ej: 0", id="inp-color-id")
+            with Horizontal(classes="config-row"):
+                yield Label("Red min/max:")
+                yield Input(placeholder="Min", id="inp-color-r-min")
+                yield Input(placeholder="Max", id="inp-color-r-max")
+            with Horizontal(classes="config-row"):
+                yield Label("Green min/max:")
+                yield Input(placeholder="Min", id="inp-color-g-min")
+                yield Input(placeholder="Max", id="inp-color-g-max")
+            with Horizontal(classes="config-row"):
+                yield Label("Blue min/max:")
+                yield Input(placeholder="Min", id="inp-color-b-min")
+                yield Input(placeholder="Max", id="inp-color-b-max")
+            with Horizontal(classes="config-row"):
+                yield Button("Guardar Umbrales en EEPROM", id="btn-save-color", variant="success")
+                
+                
             with Horizontal(classes="config-row"):
                 yield Button("Volver al Dashboard", id="btn-back", variant="primary")
 
@@ -85,3 +105,21 @@ class ConfigScreen(Screen):
                     self.app.notify("Error: Datos de Servo ID o Dwell inválidos", severity="error")
             except ValueError:
                 self.app.notify("Error: Ingrese valores numéricos", severity="error")
+        elif button_id == "btn-save-color":
+            try:
+                idx = int(self.query_one("#inp-color-id", Input).value)
+                r_min = int(self.query_one("#inp-color-r-min", Input).value)
+                r_max = int(self.query_one("#inp-color-r-max", Input).value)
+                g_min = int(self.query_one("#inp-color-g-min", Input).value)
+                g_max = int(self.query_one("#inp-color-g-max", Input).value)
+                b_min = int(self.query_one("#inp-color-b-min", Input).value)
+                b_max = int(self.query_one("#inp-color-b-max", Input).value)
+                
+                if 0 <= idx <= 2:
+                    cmd = f"SET_THRESHOLD {idx} {r_min} {r_max} {g_min} {g_max} {b_min} {b_max}"
+                    self.app.bt_send(cmd)
+                    self.app.notify(f"Color {idx} guardado exitosamente en EEPROM")
+                else:
+                    self.app.notify("Error: ID debe ser 0, 1 o 2", severity="error")
+            except ValueError:
+                self.app.notify("Error: Todos los campos de color deben ser números", severity="error")

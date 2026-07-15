@@ -13,7 +13,7 @@
 #include "calibration.h"
 
 void debug_print(const char *msg) {
-    uart_send_str(msg);
+    // uart_send_str(msg); // <-- COMENTADO PARA ACELERAR SIMULACIÓN PROTEUS
 }
 
 void i2c_scan(void) {
@@ -66,7 +66,7 @@ void main(void) {
     debug_print("SSPADD = 49\n");
 
     // Run I2C scanner
-    i2c_scan();
+    // i2c_scan(); // <-- COMENTADO PARA ACELERAR SIMULACIÓN PROTEUS
 
     // 5. LCD Init
     debug_print("lcd_init...\n");

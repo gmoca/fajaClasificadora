@@ -48,6 +48,12 @@ static uint32_t test_motor_watchdog = 0;
 void state_machine_set_mode(uint8_t mode) { auto_mode = mode; }
 void state_machine_set_spacing(uint16_t space) { min_spacing_pulses = space; }
 void state_machine_set_dwell(uint16_t dwell) { dwell_time_ms = dwell; }
+void state_machine_set_speed(uint8_t speed) {
+    motor_speed = speed;
+    if (state == ST_RUNNING || state == ST_SORTING || state == ST_TEST) {
+        pwm_hbridge_set_duty(motor_speed ? motor_speed : 180);
+    }
+}
 
 void state_machine_init(void) {
     state = ST_IDLE;
@@ -103,12 +109,21 @@ static uint8_t first_run = 1;
 
 static void load_menu_values(void) {
     menu_s1_home = calibration_read_word(EEPROM_ADDR_SERVO1_HOME);
+    if (menu_s1_home > 180) menu_s1_home = 90;
     menu_s1_defl = calibration_read_word(EEPROM_ADDR_SERVO1_DEFL);
+    if (menu_s1_defl > 180) menu_s1_defl = 0;
     menu_s1_dwell = calibration_read_word(EEPROM_ADDR_SERVO1_DWELL);
+    if (menu_s1_dwell > 5000) menu_s1_dwell = 500;
+    
     menu_s2_home = calibration_read_word(EEPROM_ADDR_SERVO2_HOME);
+    if (menu_s2_home > 180) menu_s2_home = 90;
     menu_s2_defl = calibration_read_word(EEPROM_ADDR_SERVO2_DEFL);
+    if (menu_s2_defl > 180) menu_s2_defl = 0;
     menu_s2_dwell = calibration_read_word(EEPROM_ADDR_SERVO2_DWELL);
+    if (menu_s2_dwell > 5000) menu_s2_dwell = 500;
+    
     menu_ppr = calibration_read_word(EEPROM_ADDR_ENC_PPR);
+    if (menu_ppr == 0 || menu_ppr > 1000) menu_ppr = 20;
 }
 
 static void adjust_menu_value(int8_t dir) {
@@ -267,7 +282,9 @@ void state_machine_run(void) {
 
     if (estop_triggered_by_button) {
         estop_triggered_by_button = 0;
-        state_machine_estop_reason("E_STOP_BUTTON");
+        if (state != ST_ERROR) {
+            state_machine_estop_reason("E_STOP_BUTTON");
+        }
     }
 
     if (estop_pending) {
@@ -282,6 +299,10 @@ void state_machine_run(void) {
 
 
 
+    if (!gpio_button_state(BTN_MODE)) {
+        ignore_mode_until_release = 0;
+    }
+
     if (first_run) {
         first_run = 0;
         if (gpio_button_state(BTN_MODE)) {
@@ -291,15 +312,13 @@ void state_machine_run(void) {
 
     if (state == ST_IDLE) {
         if (ignore_mode_until_release) {
-            if (!gpio_button_state(BTN_MODE)) {
-                ignore_mode_until_release = 0;
-            }
+            // Do nothing, waiting for release
         } else if (gpio_button_state(BTN_MODE)) {
             if (!idle_was_pressed) {
                 idle_press_start = now;
                 idle_was_pressed = 1;
                 idle_long_pressed = 0;
-            } else if (!idle_long_pressed && (now - idle_press_start > 2000)) {
+            } else if (!idle_long_pressed && (now - idle_press_start > 4000)) {
                 // Long press: enter ST_TEST (calibration menu)
                 state = ST_TEST;
                 menu_active = 1;
@@ -312,7 +331,7 @@ void state_machine_run(void) {
             }
         } else {
             if (idle_was_pressed) {
-                if (!idle_long_pressed && (now - idle_press_start > 50)) {
+                if (!idle_long_pressed && (now - idle_press_start > 100)) {
                     // Short press: start running
                     if (auto_mode) {
                         state = ST_RUNNING;
@@ -365,23 +384,29 @@ void state_machine_run(void) {
             break;
  
         case ST_RUNNING:
-            if (now % 100 == 0 && tcs34725_is_present()) {
-                color_rgbc_t color;
-                tcs34725_get_raw(&color);
-                int8_t idx = color_match_index(&color);
-                if (idx >= 0) {
-                    state = ST_SORTING;
-                    char buf[32];
-                    strcpy(buf, "DETECT:");
-                    char idx_str[4];
-                    u16_to_str(idx_str, (uint16_t)idx);
-                    strcat(buf, idx_str);
-                    strcat(buf, "\n");
-                    uart_send_str(buf);
-                    
-                    lcd_set_cursor(0, 1);
-                    lcd_print("Detectado: ");
-                    lcd_print(idx_str);
+            {
+                static uint32_t last_color_check = 0;
+                if (now - last_color_check >= 100) {
+                    last_color_check = now;
+                    if (tcs34725_is_present()) {
+                        color_rgbc_t color;
+                        tcs34725_get_raw(&color);
+                        int8_t idx = color_match_index(&color);
+                        if (idx >= 0) {
+                            state = ST_SORTING;
+                            char buf[32];
+                            strcpy(buf, "DETECT:");
+                            char idx_str[4];
+                            u16_to_str(idx_str, (uint16_t)idx);
+                            strcat(buf, idx_str);
+                            strcat(buf, "\n");
+                            uart_send_str(buf);
+                            
+                            lcd_set_cursor(0, 1);
+                            lcd_print("Detectado: ");
+                            lcd_print(idx_str);
+                        }
+                    }
                 }
             }
             if (now - last_lcd_update >= 500) {
@@ -469,7 +494,7 @@ void state_machine_run(void) {
                         mode_press_start = now;
                         mode_was_pressed = 1;
                         mode_long_pressed = 0;
-                    } else if (!mode_long_pressed && (now - mode_press_start > 1500)) {
+                    } else if (!mode_long_pressed && (now - mode_press_start > 3000)) {
                         if (menu_index == 7) {
                             state = ST_IDLE;
                             menu_active = 0;
@@ -489,7 +514,7 @@ void state_machine_run(void) {
                     }
                 } else {
                     if (mode_was_pressed) {
-                        if (!mode_long_pressed && (now - mode_press_start > 50)) {
+                        if (!mode_long_pressed && (now - mode_press_start > 100)) {
                             menu_index = (menu_index + 1) % 8;
                             lcd_needs_update = 1;
                         }
