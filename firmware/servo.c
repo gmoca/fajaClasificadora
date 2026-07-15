@@ -28,7 +28,7 @@ void servo_init(void) {
     TMR3L = (uint8_t)(SERVO_TMR3_RELOAD & 0xFF);
     PIR2bits.TMR3IF = 0;
     PIE2bits.TMR3IE = 1;
-    IPR2bits.TMR3IP = 0;
+    IPR2bits.TMR3IP = 1;
     T3CONbits.TMR3ON = 1;
 }
 

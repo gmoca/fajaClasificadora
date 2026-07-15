@@ -42,7 +42,10 @@ void system_init(void) {
 }
 
 void __interrupt(high_priority) isr_high(void) {
-    // INT0 E-stop moved to polled RB3 input to prevent I2C SDA conflicts on RB0
+    if (PIR2bits.TMR3IF) {
+        PIR2bits.TMR3IF = 0;
+        servo_timer3_isr();
+    }
 }
 
 void __interrupt(low_priority) isr_low(void) {
@@ -65,9 +68,5 @@ void __interrupt(low_priority) isr_low(void) {
     }
     if (PIR1bits.RCIF || (PIR1bits.TXIF && PIE1bits.TXIE)) {
         uart_isr_handler();
-    }
-    if (PIR2bits.TMR3IF) {
-        PIR2bits.TMR3IF = 0;
-        servo_timer3_isr();
     }
 }
