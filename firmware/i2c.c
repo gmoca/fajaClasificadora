@@ -14,7 +14,7 @@ void i2c_init(void) {
 }
 
 static uint8_t i2c_wait_idle(void) {
-    uint16_t timeout = 5000;
+    uint16_t timeout = 1000;
     while (((SSPCON2 & 0x1F) || (SSPSTAT & 0x04)) && --timeout);
     return (timeout > 0);
 }
@@ -22,7 +22,7 @@ static uint8_t i2c_wait_idle(void) {
 static uint8_t i2c_start(void) {
     if (!i2c_wait_idle()) return 0;
     SSPCON2bits.SEN = 1;
-    uint16_t timeout = 5000;
+    uint16_t timeout = 1000;
     while (SSPCON2bits.SEN && --timeout);
     return (timeout > 0);
 }
@@ -30,7 +30,7 @@ static uint8_t i2c_start(void) {
 static uint8_t i2c_stop(void) {
     if (!i2c_wait_idle()) return 0;
     SSPCON2bits.PEN = 1;
-    uint16_t timeout = 5000;
+    uint16_t timeout = 1000;
     while (SSPCON2bits.PEN && --timeout);
     return (timeout > 0);
 }
@@ -38,7 +38,7 @@ static uint8_t i2c_stop(void) {
 static uint8_t i2c_write_byte(uint8_t b) {
     if (!i2c_wait_idle()) return 1;
     SSPBUF = b;
-    uint16_t timeout = 5000;
+    uint16_t timeout = 1000;
     while (SSPSTATbits.BF && --timeout);
     if (timeout == 0) return 1;
     if (!i2c_wait_idle()) return 1;
@@ -48,14 +48,14 @@ static uint8_t i2c_write_byte(uint8_t b) {
 static uint8_t i2c_read_byte(uint8_t ack, uint8_t *val) {
     if (!i2c_wait_idle()) return 0;
     SSPCON2bits.RCEN = 1;
-    uint16_t timeout = 5000;
+    uint16_t timeout = 1000;
     while ((SSPSTATbits.BF == 0) && --timeout);
     if (timeout == 0) return 0;
     *val = SSPBUF;
     if (!i2c_wait_idle()) return 0;
     SSPCON2bits.ACKDT = ack ? 0 : 1;
     SSPCON2bits.ACKEN = 1;
-    timeout = 5000;
+    timeout = 1000;
     while (SSPCON2bits.ACKEN && --timeout);
     return (timeout > 0);
 }

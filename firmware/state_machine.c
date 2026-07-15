@@ -277,9 +277,22 @@ void state_machine_run(void) {
     static uint32_t idle_press_start = 0;
     static uint8_t idle_was_pressed = 0;
     static uint8_t idle_long_pressed = 0;
+    static uint8_t ignore_mode_until_release = 0;
+    static uint8_t first_run = 1;
+
+    if (first_run) {
+        first_run = 0;
+        if (gpio_button_state(BTN_MODE)) {
+            ignore_mode_until_release = 1;
+        }
+    }
 
     if (state == ST_IDLE) {
-        if (gpio_button_state(BTN_MODE)) {
+        if (ignore_mode_until_release) {
+            if (!gpio_button_state(BTN_MODE)) {
+                ignore_mode_until_release = 0;
+            }
+        } else if (gpio_button_state(BTN_MODE)) {
             if (!idle_was_pressed) {
                 idle_press_start = now;
                 idle_was_pressed = 1;
@@ -322,11 +335,17 @@ void state_machine_run(void) {
             uart_send_str("STATE:idle\n");
             lcd_clear();
             lcd_print("IDLE");
+            if (gpio_button_state(BTN_MODE)) {
+                ignore_mode_until_release = 1;
+            }
         } else if (state == ST_ERROR) {
             state = ST_IDLE;
             uart_send_str("STATE:idle\n");
             lcd_clear();
             lcd_print("IDLE - OK");
+            if (gpio_button_state(BTN_MODE)) {
+                ignore_mode_until_release = 1;
+            }
         }
     }
     
@@ -337,7 +356,7 @@ void state_machine_run(void) {
             if (now - last_lcd_update >= 500) {
                 last_lcd_update = now;
                 lcd_set_cursor(0, 1);
-                lcd_print("BT OK        ");
+                lcd_print("BT OK           ");
             }
             break;
  
@@ -452,6 +471,9 @@ void state_machine_run(void) {
                             __delay_ms(800);
                             lcd_clear();
                             lcd_print("IDLE");
+                            if (gpio_button_state(BTN_MODE)) {
+                                ignore_mode_until_release = 1;
+                            }
                         } else {
                             save_current_menu_value();
                             lcd_clear();
