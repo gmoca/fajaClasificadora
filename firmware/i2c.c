@@ -13,26 +13,36 @@ void i2c_init(void) {
     SSPSTATbits.SMP = 1;
 }
 
+static void i2c_wait_idle(void) {
+    while ((SSPCON2 & 0x1F) || (SSPSTAT & 0x04));
+}
+
 static void i2c_start(void) {
+    i2c_wait_idle();
     SSPCON2bits.SEN = 1;
     while (SSPCON2bits.SEN);
 }
 
 static void i2c_stop(void) {
+    i2c_wait_idle();
     SSPCON2bits.PEN = 1;
     while (SSPCON2bits.PEN);
 }
 
 static uint8_t i2c_write_byte(uint8_t b) {
+    i2c_wait_idle();
     SSPBUF = b;
     while (SSPSTATbits.BF);
+    i2c_wait_idle();
     return SSPCON2bits.ACKSTAT;
 }
 
 static uint8_t i2c_read_byte(uint8_t ack) {
+    i2c_wait_idle();
     SSPCON2bits.RCEN = 1;
     while (SSPSTATbits.BF == 0);
     uint8_t b = SSPBUF;
+    i2c_wait_idle();
     SSPCON2bits.ACKDT = ack ? 0 : 1;
     SSPCON2bits.ACKEN = 1;
     while (SSPCON2bits.ACKEN);
