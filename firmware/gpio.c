@@ -10,6 +10,8 @@ static uint8_t btn_counter[3];
 static const uint8_t btn_pins[3] = { 2, 5, 6 };
 
 void gpio_init(void) {
+    ADCON1 = 0x0F;  // Configure all pins as digital I/O (disable ADC)
+    
     TRISDbits.TRISD0 = 0;
     TRISDbits.TRISD1 = 0;
     gpio_hbridge_dir(HB_STOP);
