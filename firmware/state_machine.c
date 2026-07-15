@@ -251,7 +251,7 @@ int8_t color_match_index(color_rgbc_t *c) {
 
 void state_machine_run(void) {
     static uint32_t last_telemetry = 0;
-    static uint16_t lcd_counter = 0;
+    static uint32_t last_lcd_update = 0;
 
     INTCONbits.GIEL = 0;
     uint32_t now = system_ticks;
@@ -334,12 +334,13 @@ void state_machine_run(void) {
 
     switch (state) {
         case ST_IDLE:
-            if (lcd_counter++ % 500 == 0) {
+            if (now - last_lcd_update >= 500) {
+                last_lcd_update = now;
                 lcd_set_cursor(0, 1);
                 lcd_print("BT OK        ");
             }
             break;
-
+ 
         case ST_RUNNING:
             if (now % 100 == 0 && tcs34725_is_present()) {
                 color_rgbc_t color;
@@ -360,7 +361,8 @@ void state_machine_run(void) {
                     lcd_print(idx_str);
                 }
             }
-            if (lcd_counter++ % 50 == 0) {
+            if (now - last_lcd_update >= 500) {
+                last_lcd_update = now;
                 lcd_set_cursor(0, 1);
                 lcd_print("Vel: ");
                 char v_str[8];
@@ -476,12 +478,14 @@ void state_machine_run(void) {
                     adjust_menu_value(-1);
                 }
                 
-                if (lcd_counter++ % 200 == 0) {
+                if (now - last_lcd_update >= 200) {
+                    last_lcd_update = now;
                     display_menu();
                 }
             } else {
                 menu_active = 0;
-                if (lcd_counter++ % 500 == 0) {
+                if (now - last_lcd_update >= 500) {
+                    last_lcd_update = now;
                     lcd_set_cursor(0, 1);
                     lcd_print("Test Activo  ");
                 }
