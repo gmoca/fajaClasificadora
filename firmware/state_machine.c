@@ -139,6 +139,9 @@ static void adjust_menu_value(int8_t dir) {
             if (dir > 0 && menu_ppr < 1000) menu_ppr++;
             if (dir < 0 && menu_ppr > 1) menu_ppr--;
             break;
+        case 7:
+            // Exit option, no value to adjust
+            break;
     }
 }
 
@@ -151,6 +154,8 @@ static void save_current_menu_value(void) {
         case 4: calibration_save_servo_deflect(2, menu_s2_defl); break;
         case 5: calibration_save_servo_dwell(2, menu_s2_dwell); break;
         case 6: calibration_save_ppr(menu_ppr); break;
+        case 7: // Exit option, no value to save
+            break;
     }
 }
 
@@ -159,7 +164,7 @@ static void display_menu(void) {
     lcd_print("CALIBRAR LOCAL  ");
     lcd_set_cursor(0, 1);
     
-    char val_str[8];
+    char val_str[16];
     switch (menu_index) {
         case 0:
             lcd_print("S1 Home: ");
@@ -188,6 +193,10 @@ static void display_menu(void) {
         case 6:
             lcd_print("Enc PPR: ");
             u16_to_str(val_str, menu_ppr);
+            break;
+        case 7:
+            lcd_print("Mant. p/ ");
+            strcpy(val_str, "SALIR");
             break;
     }
     lcd_print(val_str);
@@ -265,21 +274,59 @@ void state_machine_run(void) {
         lcd_print("!EMERGENCY STOP!");
     }
 
-    if (gpio_button_pressed(BTN_MODE)) {
-        if (state == ST_IDLE && auto_mode) {
-            state = ST_RUNNING;
-            pwm_hbridge_set_duty(motor_speed ? motor_speed : 180);
-            gpio_hbridge_dir(HB_FWD);
-            uart_send_str("STATE:run\n");
-            lcd_clear();
-            lcd_print("RUNNING");
-        } else if (state == ST_RUNNING) {
+    static uint32_t idle_press_start = 0;
+    static uint8_t idle_was_pressed = 0;
+    static uint8_t idle_long_pressed = 0;
+
+    if (state == ST_IDLE) {
+        if (gpio_button_state(BTN_MODE)) {
+            if (!idle_was_pressed) {
+                idle_press_start = now;
+                idle_was_pressed = 1;
+                idle_long_pressed = 0;
+            } else if (!idle_long_pressed && (now - idle_press_start > 2000)) {
+                // Long press: enter ST_TEST (calibration menu)
+                state = ST_TEST;
+                menu_active = 1;
+                menu_index = 0;
+                load_menu_values();
+                lcd_clear();
+                lcd_print("MENU CALIB");
+                uint32_t delay_until = system_ticks + 800;
+                while (system_ticks < delay_until);
+                lcd_clear();
+                idle_long_pressed = 1;
+                gpio_button_pressed(BTN_MODE); // Consume the edge
+            }
+        } else {
+            if (idle_was_pressed) {
+                if (!idle_long_pressed && (now - idle_press_start > 50)) {
+                    // Short press: start running
+                    if (auto_mode) {
+                        state = ST_RUNNING;
+                        pwm_hbridge_set_duty(motor_speed ? motor_speed : 180);
+                        gpio_hbridge_dir(HB_FWD);
+                        uart_send_str("STATE:run\n");
+                        lcd_clear();
+                        lcd_print("RUNNING");
+                    }
+                }
+                idle_was_pressed = 0;
+            }
+        }
+    } else if (gpio_button_pressed(BTN_MODE)) {
+        if (state == ST_RUNNING) {
             state = ST_IDLE;
             pwm_hbridge_set_duty(0);
             gpio_hbridge_dir(HB_STOP);
             uart_send_str("STATE:idle\n");
             lcd_clear();
             lcd_print("IDLE");
+        } else if (state == ST_ERROR) {
+            state = ST_IDLE;
+            uart_send_str("STATE:idle\n");
+            lcd_clear();
+            lcd_print("IDLE - OK");
         }
     }
     
@@ -368,12 +415,6 @@ void state_machine_run(void) {
             break;
 
         case ST_ERROR:
-            if (gpio_button_pressed(BTN_MODE)) {
-                state = ST_IDLE;
-                uart_send_str("STATE:idle\n");
-                lcd_clear();
-                lcd_print("IDLE - OK");
-            }
             break;
             
         case ST_TEST:
@@ -382,7 +423,7 @@ void state_machine_run(void) {
                 gpio_hbridge_dir(HB_STOP);
             }
             
-            if (system_ticks - last_bt_activity > 5000) {
+            if (system_ticks - last_bt_activity > 5000 || last_bt_activity == 0) {
                 if (!menu_active) {
                     menu_active = 1;
                     menu_index = 0;
@@ -401,18 +442,29 @@ void state_machine_run(void) {
                         mode_was_pressed = 1;
                         mode_long_pressed = 0;
                     } else if (!mode_long_pressed && (now - mode_press_start > 1500)) {
-                        save_current_menu_value();
-                        lcd_clear();
-                        lcd_print("GUARDADO!");
-                        uint32_t delay_until = system_ticks + 800;
-                        while (system_ticks < delay_until);
-                        lcd_clear();
+                        if (menu_index == 7) {
+                            state = ST_IDLE;
+                            menu_active = 0;
+                            lcd_clear();
+                            lcd_print("MENU SALIDA");
+                            uint32_t delay_until = system_ticks + 800;
+                            while (system_ticks < delay_until);
+                            lcd_clear();
+                            lcd_print("IDLE");
+                        } else {
+                            save_current_menu_value();
+                            lcd_clear();
+                            lcd_print("GUARDADO!");
+                            uint32_t delay_until = system_ticks + 800;
+                            while (system_ticks < delay_until);
+                            lcd_clear();
+                        }
                         mode_long_pressed = 1;
                     }
                 } else {
                     if (mode_was_pressed) {
                         if (!mode_long_pressed && (now - mode_press_start > 50)) {
-                            menu_index = (menu_index + 1) % 7;
+                            menu_index = (menu_index + 1) % 8;
                             lcd_clear();
                         }
                         mode_was_pressed = 0;

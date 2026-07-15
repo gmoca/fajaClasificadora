@@ -395,6 +395,12 @@ Hola OpenCode, logramos dar con la tecla exacta de la simulación:
 9. **Inversión de Lógica en Break-beams (Active Low):**
    * Las especificaciones de simulación indican que el estado de reposo de los break-beam (`RD4`/`RD7`) es `1` (haz libre), y el de activación es `0` (haz bloqueado).
    * Modificamos `gpio_breakbeam_read()` en `gpio.c` para retornar la lectura negada (`!((PORTD >> pin) & 1)`). Esto asegura que el estado en reposo (`1`) se interprete como `C` (Clear/libre) y el estado obstruido (`0`) se interprete como `B` (Blocked/bloqueado) en la telemetría y en la rutina de anti-jam, previniendo disparos de `LASER_BEAM_BLOCKED` al conectar los `LOGICSTATE` en Proteus.
+10. **Calibración Local 100% Autónoma (Sin Bluetooth):**
+    * Añadimos soporte para entrar al modo de calibración local (`ST_TEST`) directamente en hardware sin necesidad de mandar comandos Bluetooth. 
+    * Si el usuario realiza una pulsación larga (>2 segundos) en el botón `BTN_MODE` (`RD2`) mientras el sistema está en reposo (`ST_IDLE`), el microcontrolador entra al menú del LCD.
+    * Expandimos el menú a 8 posiciones agregando la opción "SALIR" en el índice 7. Si el usuario realiza una pulsación larga en `BTN_MODE` sobre esta opción, el microcontrolador sale a `ST_IDLE` de forma autónoma.
+    * Permitimos el acceso al menú local al encender el equipo sin tener que esperar el delay de 5 segundos de inactividad Bluetooth si no ha habido comunicación previa (`last_bt_activity == 0`).
 
 - *agy*
+
 

@@ -301,6 +301,14 @@ agy completó su segunda ronda con:
   - **Problema:** Las especificaciones de simulación indican que en reposo los pines de los sensores break-beam (`RD4` y `RD7`) deben mantenerse en `1` (luz pasa / libre) y cambiar a `0` (haz interrumpido / bloqueado) cuando un objeto pasa. Nuestro código original trataba el estado `1` como bloqueado y `0` como libre (lógica invertida), lo que causaría que al conectar los `LOGICSTATE` a `1` el sistema disparara de inmediato un error `LASER_BEAM_BLOCKED` tras 3 segundos.
   - **Solución:** Modifiqué `gpio_breakbeam_read()` en `gpio.c` para negar la lectura del puerto. Ahora, un pin en estado físico `1` (reposo) retorna `0` (Clear), y un pin en estado físico `0` (objeto presente) retorna `1` (Blocked), cumpliendo exactamente con las especificaciones de Proteus.
 
+- **Menú de Calibración Local 100% Autónomo (Sin Bluetooth):**
+  - **Problema:** La calibración manual local en el hardware mediante botones y LCD (`ST_TEST`) existía en el firmware pero solo era accesible si se enviaba un comando Bluetooth `TEST_ENTER` para cambiar el estado. Esto no cumplía con el requerimiento de "Calibración sin Bluetooth" (autónomo en hardware).
+  - **Solución:**
+    1. Implementé detección de pulsación larga en el botón `BTN_MODE` (pin `RD2`) mientras el sistema está en `ST_IDLE`. Si el botón se mantiene presionado por más de 2 segundos, el sistema entra autónomamente al modo de configuración local (`ST_TEST`).
+    2. Agregué una opción de salida ("SALIR") como el 8vo elemento del menú local (`menu_index = 7`). Al seleccionarla y hacer una pulsación larga en `BTN_MODE`, el microcontrolador sale de `ST_TEST` y regresa al estado `ST_IDLE` de manera 100% autónoma.
+    3. Eliminé la espera de 5 segundos tras el arranque para entrar al menú local si no ha habido comunicación Bluetooth (`last_bt_activity == 0`), permitiendo un acceso instantáneo al encender el equipo.
+
+
 
 
 
