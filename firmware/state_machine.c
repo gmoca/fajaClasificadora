@@ -59,12 +59,19 @@ void state_machine_init(void) {
 }
 
 static volatile uint8_t estop_pending = 0;
+static const char *estop_reason = "UNKNOWN";
+volatile uint8_t estop_triggered_by_button = 0;
 
-void state_machine_estop(void) {
+void state_machine_estop_reason(const char *reason) {
     state = ST_ERROR;
     pwm_hbridge_set_duty(0);
     gpio_hbridge_dir(HB_STOP);
+    estop_reason = reason;
     estop_pending = 1;
+}
+
+void state_machine_estop(void) {
+    state_machine_estop_reason("BUTTON_OR_BT");
 }
 
 void state_machine_start(void) {
@@ -241,9 +248,19 @@ void state_machine_run(void) {
     uint32_t now = system_ticks;
     INTCONbits.GIEL = 1;
 
+    encoder_update_speed();
+
+    if (estop_triggered_by_button) {
+        estop_triggered_by_button = 0;
+        state_machine_estop_reason("E_STOP_BUTTON");
+    }
+
     if (estop_pending) {
         estop_pending = 0;
         uart_send_str("STATE:err\n");
+        uart_send_str("JAM:");
+        uart_send_str(estop_reason);
+        uart_send_str("\n");
         lcd_clear();
         lcd_print("!EMERGENCY STOP!");
     }
@@ -308,27 +325,45 @@ void state_machine_run(void) {
 
         case ST_SORTING:
             {
-                uint16_t speed = encoder_get_speed_mm_s();
-                if (speed > 0) {
-                    uint32_t transit_ms = (uint32_t)distance_to_servo_mm * 1000 / speed;
-                    uint32_t timeout_wait = system_ticks + transit_ms;
-                    // wait transit_ms
-                    while (system_ticks < timeout_wait) {
-                        anti_jam_check();
-                        if (anti_jam_is_jammed()) break;
-                    }
-                    
-                    if (!anti_jam_is_jammed()) {
-                        uint16_t defl = calibration_read_word(EEPROM_ADDR_SERVO1_DEFL);
-                        uint16_t home = calibration_read_word(EEPROM_ADDR_SERVO1_HOME);
-                        servo_set_angle(1, defl);
-                        uint32_t timeout = system_ticks + dwell_time_ms;
-                        while (system_ticks < timeout) {}
-                        servo_set_angle(1, home);
+                static uint8_t sorting_phase = 0;
+                static uint32_t sorting_timeout = 0;
+                
+                if (sorting_phase == 0) {
+                    uint16_t speed = encoder_get_speed_mm_s();
+                    if (speed > 0) {
+                        uint32_t transit_ms = (uint32_t)distance_to_servo_mm * 1000 / speed;
+                        sorting_timeout = system_ticks + transit_ms;
+                        sorting_phase = 1;
+                    } else {
+                        // Speed is 0, abort sorting
+                        state = ST_RUNNING;
+                        sorting_phase = 0;
                     }
                 }
-                state = ST_RUNNING;
-                uart_send_str("DONE\n");
+                
+                if (sorting_phase == 1) {
+                    if (system_ticks >= sorting_timeout) {
+                        if (!anti_jam_is_jammed() && state != ST_ERROR) {
+                            uint16_t defl = calibration_read_word(EEPROM_ADDR_SERVO1_DEFL);
+                            servo_set_angle(1, defl);
+                            sorting_timeout = system_ticks + dwell_time_ms;
+                            sorting_phase = 2;
+                        } else {
+                            state = ST_RUNNING;
+                            sorting_phase = 0;
+                        }
+                    }
+                }
+                
+                if (sorting_phase == 2) {
+                    if (system_ticks >= sorting_timeout) {
+                        uint16_t home = calibration_read_word(EEPROM_ADDR_SERVO1_HOME);
+                        servo_set_angle(1, home);
+                        state = ST_RUNNING;
+                        sorting_phase = 0;
+                        uart_send_str("DONE\n");
+                    }
+                }
             }
             break;
 

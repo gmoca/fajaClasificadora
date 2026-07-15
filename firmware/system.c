@@ -42,6 +42,10 @@ void system_init(void) {
 }
 
 void __interrupt(high_priority) isr_high(void) {
+    if (PIR2bits.CCP2IF) {
+        PIR2bits.CCP2IF = 0;
+        servo_ccp2_isr();
+    }
     if (PIR2bits.TMR3IF) {
         PIR2bits.TMR3IF = 0;
         servo_timer3_isr();
@@ -59,7 +63,7 @@ void __interrupt(low_priority) isr_low(void) {
         
         // Polled E-stop on RB3 (active low)
         if (PORTBbits.RB3 == 0) {
-            state_machine_estop();
+            estop_triggered_by_button = 1;
         }
     }
     if (INTCON3bits.INT2IF) {

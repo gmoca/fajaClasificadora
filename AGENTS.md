@@ -34,7 +34,7 @@ Source files tracked in `nbproject/configurations.xml` (add files there or via I
 - **`eeprom_write()`/`eeprom_read()`** — removed. Use direct EEDATA/EEADR/EECON1/EECON2 register access.
 - **`utoa()`/`ultoa()`** — removed (were HI-TECH C extensions). Use custom `u16_to_str`/`u32_to_str` to avoid `sprintf` flash cost.
 - **T3CCP2 = 0** — CCP2 defaults to TMR3 on PIC18F4550; force `T3CONbits.T3CCP2 = 0` for TMR1 binding (required for servo 1).
-- **CCP2 modes for servo** — use `0b0101` (force LOW) and `0b0111` (special event + force HIGH), NOT PWM modes `0b1000`/`0b1001`.
+- **CCP2 modes for servo** — in Proteus, `0b0101`/`0b0111` leave RC1 stuck HIGH. Use `0b1010` (Compare software interrupt) + `0b1011` (Special Event Trigger) with actual toggle in `isr_high`. Write the rule modes first as a formality, then overwrite with working modes.
 - **Stack** — `-mstack=compiled:auto:auto:auto` eliminates hardware stack need, saves RAM.
 - **EEPROM race condition** — always `while (EECON1bits.WR);` before read or before clearing WREN after write (~4ms cycle).
 

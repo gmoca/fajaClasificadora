@@ -77,6 +77,6 @@ void gpio_breakbeam_emitter(uint8_t on) {
 
 uint8_t gpio_breakbeam_read(uint8_t station) {
     if (station == 1)
-        return (PORTD >> 4) & 1;
-    return (PORTD >> 7) & 1;
+        return !((PORTD >> 4) & 1); // Pin RD4 is 0 when blocked, 1 when clear
+    return !((PORTD >> 7) & 1);    // Pin RD7 is 0 when blocked, 1 when clear
 }

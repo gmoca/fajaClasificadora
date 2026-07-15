@@ -25,6 +25,9 @@ void encoder_reset(void) {
     INTCONbits.PEIE = 1;
 }
 
+static volatile uint8_t speed_update_pending = 0;
+static volatile uint16_t captured_pulses = 0;
+
 void encoder_isr_handler(void) {
     total_pulses++;
     pulse_window++;
@@ -35,9 +38,17 @@ void encoder_tick_handler(void) {
     counter++;
     if (counter >= SPEED_WINDOW_MS) {
         counter = 0;
-        uint32_t pps = (uint32_t)pulse_window * (1000 / SPEED_WINDOW_MS);
-        speed_mm_s = (uint16_t)(pps * ROLLER_MM / PULSES_PER_REV);
+        captured_pulses = pulse_window;
         pulse_window = 0;
+        speed_update_pending = 1;
+    }
+}
+
+void encoder_update_speed(void) {
+    if (speed_update_pending) {
+        speed_update_pending = 0;
+        uint32_t pps = (uint32_t)captured_pulses * (1000 / SPEED_WINDOW_MS);
+        speed_mm_s = (uint16_t)(pps * ROLLER_MM / PULSES_PER_REV);
     }
 }
 

@@ -14,10 +14,12 @@ typedef enum {
 void state_machine_init(void);
 void state_machine_run(void);
 void state_machine_estop(void);
+void state_machine_estop_reason(const char *reason);
 void state_machine_start(void);
 void state_machine_test_enter(void);
 void state_machine_test_exit(void);
 void state_machine_test_motor(void);
+extern volatile uint8_t estop_triggered_by_button;
 
 // Task 12 missing setters
 void state_machine_set_mode(uint8_t mode);

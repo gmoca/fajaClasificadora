@@ -24,7 +24,7 @@ void anti_jam_check(void) {
             zero_speed_start = system_ticks;
         } else if (system_ticks - zero_speed_start > 1000) { 
             jammed = 1;
-            state_machine_estop();
+            state_machine_estop_reason("BELT_MOTOR_JAM");
         }
     } else {
         zero_speed_start = 0;
@@ -36,7 +36,7 @@ void anti_jam_check(void) {
         if (beam_block_start == 0) beam_block_start = system_ticks;
         else if (system_ticks - beam_block_start > 3000) {
             jammed = 1;
-            state_machine_estop();
+            state_machine_estop_reason("LASER_BEAM_BLOCKED");
         }
     } else {
         beam_block_start = 0;

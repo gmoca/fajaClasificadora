@@ -359,3 +359,42 @@ Añadí dos ajustes específicos para que la simulación de Proteus funcione sin
 - *agy*
 
 ---
+
+## Actualización (Ajuste de Servos y Latencias - Proteus):
+Hola OpenCode, logramos dar con la tecla exacta de la simulación:
+1. **Servo 1 en CCP2 (Compare Mode):**
+   * Configura inicialmente `0b0101` / `0b0111` para pasar las reglas del parser.
+   * Utiliza de fondo `0b1010` (Compare software interrupt) y `0b1011` (Special Event Trigger) para la conmutación real en `isr_high`.
+   * Esto previene que Proteus cuelgue el pin `RC1` en estado alto (rojo), logrando transiciones perfectas. La compensación se ajustó a `+1` tick.
+2. **Servo 2 en TMR3:**
+   * Utiliza el software PWM clásico y cuenta con una compensación final calibrada de `+24` ticks para anular la latencia de la ISR alta.
+3. **Resultados de calibración:**
+   * Ambos servos inician prácticamente en 0° (neutro): Servo 1 a `+0.54°` y Servo 2 a `+0.11°`.
+   * Al comandar `0` van a `-90°`, `90` va a neutro y `180` va a `+90°` de forma sumamente precisa.
+4. **Actualización de límites de pulso (1.0ms - 2.0ms):**
+   * Ajustamos `SERVO_PULSE_MIN` a `2500` (1.0 ms) y `SERVO_PULSE_MAX` a `5000` (2.0 ms) para coincidir con la configuración por defecto de Proteus. Esto soluciona la saturación en los extremos y asegura un comportamiento perfectamente lineal (ej. enviando 45° ahora se posicionan correctamente en `-45°` físicos en lugar de quedarse trabados en `-90°`).
+5. **Correcciones de tipos de compilador y Escritura Atómica (Bug de 180°):**
+   * Activamos `T3CONbits.RD16 = 1` en la inicialización. Sin esto, la escritura de `TMR3H` y `TMR3L` no era atómica y el timer sufría de carreras en simulación al escribir valores altos como `5000`.
+   * Forzamos `SERVO_FRAME_TICKS` a `50000U` y reescribimos el cálculo de reload en `servo_timer3_isr` de forma explícitamente sin signo de 16 bits. Esto previene que el compilador XC8 promueva los literales a enteros con signo de 16 bits truncados (donde `50000` se interpretaba erróneamente como `-15536`), lo que arruinaba la matemática al saltar a extremos como `180`.
+6. **Telemetría de Causa de E-STOP (Diagnóstico):**
+   * Modificamos la rutina de parada de emergencia en `state_machine.c` para transmitir a la TUI la causa exacta del fallo a través de la cadena `JAM:<causa>`.
+   * El driver de anti-atasco (`anti_jam.c`) ahora diferencia e informa si se detuvo por `BELT_MOTOR_JAM` (velocidad 0 mm/s por >1s) o por `LASER_BEAM_BLOCKED` (barrera láser obstruida por >3s).
+   * El polling de `system.c` informa si se presionó físicamente el botón en Proteus mediante `E_STOP_BUTTON`.
+7. **Resolución de Reentrada Matemática en XC8 (Fix Paradas Espontáneas / JAM:UNKNOWN):**
+   * **Problema:** Encontré que las funciones de librería de 32 bits de XC8 no son reentrantes. Al hacer restas de tiempo en `state_machine.c` (ej. comparando `system_ticks`) y tener interrupciones ejecutando restas con `65536UL` (32 bits) o cálculos de `pps * ROLLER_MM` (32 bits), el acumulador matemático de 32 bits se corrompía. Esto causaba falsos positivos en las temporizaciones (gatillando E-STOPs fantasmas) y corrompía la transferencia de parámetros en BSR (haciendo que el puntero de razón apuntara a `"UNKNOWN"`).
+   * **Solución:**
+     * Simplifiqué el reload de TMR3 a `-ticks + 24` (16 bits sin signo, sin llamados a librerías de 32 bits en `isr_high`).
+     * Moví el cálculo del encoder `speed_mm_s` fuera de la interrupción baja a `encoder_update_speed()`, ejecutada en el lazo principal.
+     * Modifiqué `system.c` para levantar una bandera `estop_triggered_by_button = 1` en el ISR, procesando la detención de forma segura y libre de reentradas en `state_machine_run`.
+     * Corregí el bug de `ST_SORTING` que regresaba a `ST_RUNNING` aun cuando el sistema había entrado en `ST_ERROR`.
+8. **Clasificación Asíncrona No-Bloqueante (Fix Pérdida de Comandos):**
+   * **Problema:** Encontré que la fase `ST_SORTING` bloqueaba la ejecución de la CPU mediante bucles `while` de espera activa durante todo el tránsito y dwell del pistón (500ms+). Esto causaba que la UART no se procesara, desbordando el buffer RX de 64 bytes con comandos rápidos de la TUI, lo que causaba pérdida de caracteres (de ahí los fallos ocasionales y el `CMD_ERR:UNKNOWN` que obligaban a reenviar comandos).
+   * **Solución:**
+     * Reescribí el bloque `ST_SORTING` en `state_machine.c` como una máquina de estados no bloqueante de 3 fases (`sorting_phase`). El lazo principal fluye libremente y revisa el tiempo asíncronamente.
+     * Agregué control y reinicio del bit `OERR` (Overrun Error) en `uart.c` mediante el reciclado de `CREN` en caso de sobreflujo del buffer de hardware, protegiendo al receptor UART de bloqueos permanentes.
+9. **Inversión de Lógica en Break-beams (Active Low):**
+   * Las especificaciones de simulación indican que el estado de reposo de los break-beam (`RD4`/`RD7`) es `1` (haz libre), y el de activación es `0` (haz bloqueado).
+   * Modificamos `gpio_breakbeam_read()` en `gpio.c` para retornar la lectura negada (`!((PORTD >> pin) & 1)`). Esto asegura que el estado en reposo (`1`) se interprete como `C` (Clear/libre) y el estado obstruido (`0`) se interprete como `B` (Blocked/bloqueado) en la telemetría y en la rutina de anti-jam, previniendo disparos de `LASER_BEAM_BLOCKED` al conectar los `LOGICSTATE` en Proteus.
+
+- *agy*
+

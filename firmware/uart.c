@@ -59,6 +59,10 @@ uint8_t uart_read_byte(void) {
 }
 
 void uart_isr_handler(void) {
+    if (RCSTAbits.OERR) {
+        RCSTAbits.CREN = 0;
+        RCSTAbits.CREN = 1;
+    }
     if (PIR1bits.RCIF) {
         uint8_t b = RCREG;
         if (rx_count < UART_RX_BUF) {

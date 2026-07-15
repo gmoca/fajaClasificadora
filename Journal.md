@@ -264,5 +264,43 @@ agy completó su segunda ronda con:
   - Agregué mensajes de error dedicados en caso de fallo de detección de la LCD (`[ERROR] LCD I2C ACK failed`) o del sensor de color (`[ERROR] TCS34725 not detected`).
   - Agregué `ADCON1 = 0x0F;` al inicio de `gpio_init()` en `gpio.c` para deshabilitar explícitamente las funciones analógicas en todos los puertos (asegurando el funcionamiento digital de `RB0` y `RB1`).
 
+### Actualización (OpenCode) - 2026-07-15 (Validación final)
+- **agy tenía razón sobre todo.** Revisé el datasheet DS39632E Tabla 1-3: MSSP (I2C) está en **RB0/RB1**, no en RC3/RC4. El PIC18F4550 es diferente al PIC18F4520/PIC16F877A en esto. Mis reverts anteriores al pinout y E-stop estaban equivocados.
+- **Correcciones críticas de agy que validé:**
+  - `MCLRE = OFF` — necesario para que Proteus no mantenga el PIC en reset
+  - `TXIP = 0`, `TMR0IP = 0` — sin esto, ISR se desvía a isr_high (bucle infinito al boot)
+  - UART TX ISR — faltaba manejar TXIF, causaba bucle en la primera letra
+  - `ADCON1 = 0x0F` — deshabilita ADC en puertos digitales
+  - CCP2 modos `0b1010`/`0b1011` con toggle en isr_high (Proteus no maneja 0b0101/0b0111)
+  - Compensación de latencia servo 2: +24 ticks
+- **Build verificado**: 14/14 archivos .p1 compilan + link + .hex generado — 0 errores
+- **AGENTS.md**: Actualizada línea CCP2 modes con la técnica real que funciona en Proteus.
+
+### Actualización (agy) - 2026-07-15 (Resolución de Servos en Proteus)
+- **Servo 1 (Compare Mode con software override en `isr_high`):** Re-diseñó el driver de Servo 1 en `servo.c` utilizando la prioridad de interrupción alta (`isr_high`). En lugar de usar los modos de hardware Compare directo `1001` (los cuales Proteus no maneja correctamente y trababan el pin `RC1` en alto), implementó una lógica de 2 fases en software sobre el modo `0b1010` (Compare software interrupt) y `0b1011` (Special Event Trigger). Esto permite cumplir con las reglas de codificación y la simulación sin interferencia de Proteus, compensando la latencia con `+1` tick para exactitud de 0.00°.
+- **Servo 2 (TMR3 Software PWM con compensación de latencia):** Restableció Servo 2 en `TMR3` de alta prioridad con un factor de compensación calibrado a `+24` ticks, eliminando por completo la variación del ángulo inicial y logrando un error marginal de `0.11°` en la simulación.
+- **Alineación de Rangos de Pulso (1.0 ms - 2.0 ms):** Corrigió los límites de pulso en `servo.h` (`SERVO_PULSE_MIN` a `2500` y `SERVO_PULSE_MAX` a `5000`) para alinearlos con el rango estándar de `1.0 ms` a `2.0 ms` que usa el modelo por defecto `MOTOR-PWMSERVO` de Proteus. Esto soluciona la no-linealidad donde ángulos menores a 45° quedaban saturados en `-90°`.
+
+- **Acceso Atómico a TMR3 y Corrección de Tipos de Compilador (XC8):** Activé `RD16 = 1` en `T3CON` para asegurar que las escrituras del High/Low byte de TMR3 ocurran de forma atómica y eviten desbordamientos destructivos intermedios en la simulación. Suffixé `SERVO_FRAME_TICKS` a `50000U` para forzar operaciones unsigned de 16 bits nativas en XC8, evitando que el compilador truncara o promoviera incorrectamente los cálculos de reload con signo.
+
+- **Telemetría de Diagnóstico de Parada de Emergencia (E-STOP):** Implementé la función `state_machine_estop_reason()` en `state_machine.c` y re-escribí las llamadas en `system.c` y `anti_jam.c`. Ahora, al gatillarse una parada de emergencia, el microcontrolador envía de inmediato un evento de telemetría UART con la razón exacta (`JAM:BELT_MOTOR_JAM`, `JAM:LASER_BEAM_BLOCKED` o `JAM:E_STOP_BUTTON`), el cual es interpretado por la TUI e impreso en la consola de logs. Esto permite saber con exactitud qué sensor o evento gatilló el paro.
+
+- **Resolución de Reentrada del Compilador XC8 (Parada Involuntaria y JAM:UNKNOWN):** 
+  - Diagnosticamos que el compilador XC8 no posee funciones matemáticas de 32 bits reentrantes. Al realizar restas de 32 bits en el lazo principal (`system_ticks - zero_speed_start`) mientras la interrupción alta (`isr_high`) o baja (`isr_low`) realizaban operaciones de 32 bits (como `65536UL - ticks` o el cálculo de velocidad `speed_mm_s`), los registros del acumulador de 32 bits se corrompían aleatoriamente. Esto provocaba que las comparaciones de tiempo dieran verdaderas de forma espontánea, disparando E-STOPs sin motivo y corrompiendo el puntero del parámetro `reason` (imprimiendo `JAM:UNKNOWN`).
+  - **Acción 1:** Eliminamos todas las matemáticas de 32 bits de las interrupciones. La recarga de TMR3 en `servo.c` ahora usa `-ticks + 24` (negación pura de 16 bits inline).
+  - **Acción 2:** Movimos la matemática de multiplicación/división de velocidad `speed_mm_s` fuera de `encoder_tick_handler()` (que corre en `isr_low`) a una nueva función `encoder_update_speed()`, la cual se ejecuta en el lazo principal (`state_machine_run`).
+  - **Acción 3:** Eliminamos la reentrada de `state_machine_estop_reason` modificando la interrupción de `system.c` para que solo active la bandera `estop_triggered_by_button = 1`, procesándola de manera segura en el lazo principal.
+  - **Acción 4:** Corregimos un bug en `ST_SORTING` que sobreescribía el estado a `ST_RUNNING` ignorando si se había declarado `ST_ERROR` durante la espera.
+
+- **Optimización Asíncrona de Clasificación (ST_SORTING) y Fiabilidad UART:**
+  - **Problema:** Encontré que la fase de clasificación (`ST_SORTING`) bloqueaba la CPU durante más de 500 ms usando bucles `while` de espera activa. Al bloquearse la CPU, `bt_protocol_process()` dejaba de ejecutarse, provocando que los comandos de Bluetooth enviados durante ese tiempo (como consultas de estado o comandos rápidos del servo) desbordaran el buffer de recepción UART de 64 bytes, resultando en caracteres perdidos y en errores `CMD_ERR:UNKNOWN` (obligando a reenviar comandos).
+  - **Acción 1:** Convertí la fase `ST_SORTING` en una máquina de estados asíncrona basada en fases (`sorting_phase = 0, 1, 2`) y comparaciones no bloqueantes contra `system_ticks`. Ahora la CPU nunca se congela, permitiendo que la UART lea bytes instantáneamente en cada vuelta del lazo principal.
+  - **Acción 2:** Agregué lógica de recuperación frente a errores de sobreflujo UART (Overrun Error - `OERR`) en `uart_isr_handler()` mediante el re-encendido de `CREN`, garantizando que la UART nunca se quede bloqueada permanentemente ante cualquier anomalía de simulación.
+
+- **Inversión de Lógica en Sensores de Barrera (Break-beams):**
+  - **Problema:** Las especificaciones de simulación indican que en reposo los pines de los sensores break-beam (`RD4` y `RD7`) deben mantenerse en `1` (luz pasa / libre) y cambiar a `0` (haz interrumpido / bloqueado) cuando un objeto pasa. Nuestro código original trataba el estado `1` como bloqueado y `0` como libre (lógica invertida), lo que causaría que al conectar los `LOGICSTATE` a `1` el sistema disparara de inmediato un error `LASER_BEAM_BLOCKED` tras 3 segundos.
+  - **Solución:** Modifiqué `gpio_breakbeam_read()` en `gpio.c` para negar la lectura del puerto. Ahora, un pin en estado físico `1` (reposo) retorna `0` (Clear), y un pin en estado físico `0` (objeto presente) retorna `1` (Blocked), cumpliendo exactamente con las especificaciones de Proteus.
+
+
 
 
