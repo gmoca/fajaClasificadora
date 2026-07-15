@@ -55,6 +55,9 @@ uint16_t servo_get_angle(uint8_t servo_id) {
 /* Dual software PWM generation via TMR3 ISR (runs every 25 µs)
  * Precalculated steps used to avoid division inside ISR */
 void servo_timer3_isr(void) {
+    TMR3H = (uint8_t)(SERVO_TMR3_RELOAD >> 8);
+    TMR3L = (uint8_t)(SERVO_TMR3_RELOAD & 0xFF);
+
     static uint16_t tick = 0;
     tick++;
     if (tick >= 800) {
@@ -66,7 +69,4 @@ void servo_timer3_isr(void) {
         LATCbits.LATC0 = 0; // End pulse for Servo 2
     if (tick == servo1_steps)
         LATCbits.LATC1 = 0; // End pulse for Servo 1
-
-    TMR3H = (uint8_t)(SERVO_TMR3_RELOAD >> 8);
-    TMR3L = (uint8_t)(SERVO_TMR3_RELOAD & 0xFF);
 }
