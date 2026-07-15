@@ -3,9 +3,9 @@
 
 #define DEBOUNCE_MS 5
 
-static uint8_t btn_state[3];
-static uint8_t btn_edge[3];
-static uint8_t btn_counter[3];
+static volatile uint8_t btn_state[3];
+static volatile uint8_t btn_edge[3];
+static volatile uint8_t btn_counter[3];
 
 static const uint8_t btn_pins[3] = { 2, 5, 6 };
 
