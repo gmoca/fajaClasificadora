@@ -47,6 +47,14 @@ Este archivo sirve como bitácora de desarrollo (changelog) para documentar el p
   - **Conexión de Estado:** La variable `last_bt_activity` se actualiza dinámicamente en `bt_protocol.c` al leer de la UART para salir del menú de inmediato si se detecta actividad del TUI.
 - **Scripts de Lanzamiento Automático:** Diseñé y creé los archivos `start.bat` y `start.sh` en `tui_app/` para permitir que cualquier usuario inicialice automáticamente el entorno virtual de Python e instale todas las dependencias requeridas en Windows, Linux, macOS o Android Termux con un solo comando.
 
+### Actualización (agy) - 2026-07-15 (TUI Mejorada):
+- **Hoja de Estilos TCSS (`tui_app/app.tcss`)**: Diseñé e implementé una hoja de estilos unificada con estética premium oscura, paneles con bordes definidos, alineaciones consistentes y clases dinámicas para cambiar colores según estados y detecciones.
+- **Correciones en Parser (`tui_app/protocol.py`)**: Habilité el soporte para telemetría compuesta (compuesta por varios pares clave-valor por línea), solucionando el problema de actualización de velocidad y pulso. También añadí soporte para estados de botones múltiples en `"BTN:"` y multi-beam en `"BEAM:"`.
+- **Navegación Fluida (`tui_app/app.py`)**: Integré atajos por teclado de función global (`F1`-`F4`) para desplazarse de manera instantánea entre pantallas con lógica de limpieza automática de la pila de Textual.
+- **Métricas de Faja (`tui_app/screens/dashboard.py`)**: Agregué contadores reactivos para registrar en la interfaz la cantidad de objetos Rojo, Verde y Azul clasificados dinámicamente, además del conteo de pulsos acumulados del encoder.
+- **Carga Bidireccional (`tui_app/screens/config.py`)**: Creé el flujo asíncrono para consultar toda la configuración de calibración de servos del PIC (`SERVO_GET_CONFIG`) y auto-rellenar los campos de la interfaz local. Implementé también la automatización del guardado de Home/Deflexión moviendo temporalmente los servos antes de persistir a la EEPROM.
+- **Monitoreo Test Activo (`tui_app/screens/test_screen.py`)**: Habilité el autolimpiado y temporizador de polling asíncrono para break-beams y botones físicos en la pantalla de pruebas, con representación gráfica de su estado (bloqueado/libre, presionado/liberado) mediante colores dinámicos por CSS.
+
 ---
 
 ## Registro de OpenCode
@@ -316,5 +324,14 @@ agy completó su segunda ronda con:
   - **Firmware:** Modifiqué `calibration_save_color()` en `calibration.c` para que al guardar un nuevo umbral de color con el comando `SET_THRESHOLD`, actualice automáticamente el contador interno `EEPROM_ADDR_NUM_CLR` si es necesario. Esto evita el bug lógico donde `num_colors` siempre era 0 al arrancar.
   - **TUI ConfigScreen:** Implementé una nueva sección "Registro de Colores (Umbrales)" en `config.py`. Proporciona campos visuales para ingresar el Índice y los valores Mín/Máx de Rojo, Verde y Azul (RGB). El botón de guardado compone y despacha el comando `SET_THRESHOLD` de forma transparente.
 
-
-
+### Actualización (agy) - 2026-07-15 (Responsividad, Footers y Correcciones de Protocolo):
+- **Resolución de Error Sintáctico TCSS:** Dado que Textual CSS no soporta la directiva `@media` de CSS estándar (generaba errores en el inicio de la TUI), implementé responsividad a través del método `on_resize` en Python. Este método añade o remueve dinámicamente la clase `.wide-screen` en los contenedores de pantalla. En `app.tcss` reemplacé los bloques `@media` por selectores descendientes normales basados en `.wide-screen`.
+- **Anclaje de Botones de Retorno (`dock: bottom`):** Corregí el error de colapso de espacio vertical que recortaba los inputs de calibración de servos y ocultaba el visor de logs. Anclé los botones de retorno al extremo inferior de las pantallas (`ConfigScreen`, `TestScreen`, `LogViewerScreen`) usando el acoplamiento `dock: bottom` de Textual.
+- **Estructura Expandible e Independiente (`height: 1fr`):** El cuerpo de las pantallas secundarias ahora se expande dinámicamente al 100% de la altura disponible. Las columnas de las pantallas `ConfigScreen` y `TestScreen` realizan scroll de manera independiente (`overflow-y: auto`), garantizando accesibilidad total sin importar la resolución.
+- **Optimización en TestScreen:**
+  - Compacté el formulario de servomotores alineando inputs y botones en una única línea horizontal (`test-row-inline`), ganando unos 7 renglones de alto.
+  - Renombré el botón "Pulsar Motor" a **"Girar Motor (2s)"** para mayor claridad en español técnico.
+- **Correcciones Críticas de Protocolo PIC-TUI:**
+  - Modifiqué `protocol.py` para mapear `SERVO_CFG` a `SERVO_CONFIG` (permitiendo que las lecturas asíncronas de calibración de servos leídas desde la EEPROM por el PIC se auto-rellenen correctamente en la interfaz).
+  - Mapeé la respuesta de encoder `ENC:` a `ENCODER_COUNT` para habilitar la lectura de pulsos en el modo de prueba.
+- **Enrutador de Conexión Inteligente:** Modifiqué `action_connect()` en `app.py` para detectar automáticamente si la TUI corre bajo Termux en un celular Android. Si es así, prioriza la conexión TCP local (`127.0.0.1`) barriendo puertos comunes del puente Bluetooth (`8080`, `9000`, `1234`) instantáneamente para evitar esperas molestas por timeouts de puertos serie COM físicos. En PC, mantiene la prioridad de escaneo de puertos COM.

@@ -7,19 +7,29 @@ from textual.reactive import reactive
 class DashboardScreen(Screen):
     state = reactive("IDLE")
     speed = reactive(0)
+    pulses = reactive(0)
     last_color = reactive("-")
+    red_count = reactive(0)
+    green_count = reactive(0)
+    blue_count = reactive(0)
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="dash-main"):
             with Vertical(id="dash-stats"):
                 yield Static("Estado del Sistema", classes="panel-title")
-                yield Static("IDLE", id="lbl-state")
+                yield Static("IDLE", id="lbl-state", classes="state-idle")
                 
                 yield Static("Velocidad (mm/s)", classes="panel-title")
                 yield Digits("0", id="lbl-speed")
                 
+                yield Static("Pulsos Encoder", classes="panel-title")
+                yield Static("0", id="lbl-pulses")
+
                 yield Static("Último Color Detectado", classes="panel-title")
                 yield Static("-", id="lbl-color")
+                
+                yield Static("Contadores de Clasificación", classes="panel-title")
+                yield Static("Rojo: 0 | Verde: 0 | Azul: 0", id="lbl-counters")
             
             with Vertical(id="dash-log"):
                 yield Static("Log de Eventos", classes="panel-title")
@@ -39,7 +49,28 @@ class DashboardScreen(Screen):
 
     def watch_state(self, new_state: str) -> None:
         try:
-            self.query_one("#lbl-state", Static).update(f"{new_state}")
+            widget = self.query_one("#lbl-state", Static)
+            widget.update(f"{new_state}")
+            
+            # Reset style classes
+            widget.remove_class("state-idle")
+            widget.remove_class("state-run")
+            widget.remove_class("state-sort")
+            widget.remove_class("state-test")
+            widget.remove_class("state-err")
+            
+            # Add dynamic class based on current state
+            s = new_state.lower()
+            if "idle" in s:
+                widget.add_class("state-idle")
+            elif "run" in s:
+                widget.add_class("state-run")
+            elif "sort" in s:
+                widget.add_class("state-sort")
+            elif "test" in s:
+                widget.add_class("state-test")
+            elif "err" in s or "emergency" in s:
+                widget.add_class("state-err")
         except:
             pass
 
@@ -48,12 +79,56 @@ class DashboardScreen(Screen):
             self.query_one("#lbl-speed", Digits).update(f"{new_speed}")
         except:
             pass
+
+    def watch_pulses(self, new_pulses: int) -> None:
+        try:
+            self.query_one("#lbl-pulses", Static).update(f"{new_pulses}")
+        except:
+            pass
             
     def watch_last_color(self, new_color: str) -> None:
         try:
-            self.query_one("#lbl-color", Static).update(f"{new_color}")
+            widget = self.query_one("#lbl-color", Static)
+            widget.update(f"{new_color}")
+            
+            widget.remove_class("color-rojo")
+            widget.remove_class("color-verde")
+            widget.remove_class("color-azul")
+            
+            c = new_color.lower()
+            if "rojo" in c:
+                widget.add_class("color-rojo")
+            elif "verde" in c:
+                widget.add_class("color-verde")
+            elif "azul" in c:
+                widget.add_class("color-azul")
         except:
             pass
+            
+    def increment_color_count(self, color_idx: str):
+        if color_idx == "0":
+            self.red_count += 1
+        elif color_idx == "1":
+            self.green_count += 1
+        elif color_idx == "2":
+            self.blue_count += 1
+
+    def update_counters_label(self) -> None:
+        try:
+            self.query_one("#lbl-counters", Static).update(
+                f"Rojo: {self.red_count} | Verde: {self.green_count} | Azul: {self.blue_count}"
+            )
+        except:
+            pass
+
+    def watch_red_count(self, new_val: int) -> None:
+        self.update_counters_label()
+
+    def watch_green_count(self, new_val: int) -> None:
+        self.update_counters_label()
+
+    def watch_blue_count(self, new_val: int) -> None:
+        self.update_counters_label()
             
     def log_event(self, message: str) -> None:
         try:
@@ -86,3 +161,11 @@ class DashboardScreen(Screen):
             except ValueError:
                 pass
             event.input.value = ""
+
+    def on_resize(self, event) -> None:
+        if event.size.width >= 90:
+            self.add_class("wide-screen")
+            self.remove_class("narrow-screen")
+        else:
+            self.add_class("narrow-screen")
+            self.remove_class("wide-screen")

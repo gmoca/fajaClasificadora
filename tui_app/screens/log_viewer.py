@@ -8,7 +8,8 @@ class LogViewerScreen(Screen):
         with Vertical(id="logviewer-main"):
             yield Static("Visor de Logs Completo", classes="panel-title")
             yield Log(id="full-sys-log")
-            yield Button("Volver al Dashboard", id="btn-back", variant="primary")
+            with Vertical(id="logviewer-footer"):
+                yield Button("Volver al Dashboard", id="btn-back", variant="primary")
 
     def log_event(self, message: str) -> None:
         try:

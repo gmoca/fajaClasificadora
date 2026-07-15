@@ -117,6 +117,13 @@
 - [x] Fix: `query_one("DashboardScreen", ...)` → `query_one(DashboardScreen)` (CSS selector inválido)
 - [x] `pyserial-asyncio` agregado a dependencias
 - [x] `start.bat` + `start.sh` — scripts de lanzamiento automático (Windows/Linux/macOS/Termux)
+- [x] **TUI Mejora Estética y Funcional (agy)**
+  - [x] Agregada hoja de estilos unificada `app.tcss` con temas oscuros y clases de estado dinámicas
+  - [x] Corregido parseo de telemetría compuesta en `protocol.py`
+  - [x] Añadido conteo de objetos clasificados (R/G/B) y telemetría de encoder pulses en tiempo real
+  - [x] Carga bidireccional de parámetros servo desde la EEPROM en `ConfigScreen`
+  - [x] Monitoreo en tiempo real de break-beams y botones físicos con temporizador de refresco (500ms) en `TestScreen`
+  - [x] Integración de navegación por teclado global F1-F4 libre de fugas de pila de pantallas
 
 ---
 
@@ -139,4 +146,4 @@
 | [ ] | Pendiente — no iniciado |
 
 ---
-*Última actualización: 2026-07-14*
+*Última actualización: 2026-07-15*

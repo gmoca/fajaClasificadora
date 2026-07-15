@@ -2,63 +2,123 @@ from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal
 from textual.widgets import Static, Button, Input, Label
 from textual.screen import Screen
+import asyncio
 
 class ConfigScreen(Screen):
     def compose(self) -> ComposeResult:
         with Vertical(id="config-main"):
             yield Static("Configuración de Parámetros", classes="panel-title")
             
-            with Horizontal(classes="config-row"):
-                yield Label("Velocidad del Motor (0-255):")
-                yield Input(placeholder="Ej: 180", id="inp-speed")
-                yield Button("Aplicar Velocidad", id="btn-apply-speed")
+            with Horizontal(id="config-body"):
+                # Columna Izquierda: Faja, Motor, Servos
+                with Vertical(id="config-left-col"):
+                    yield Static("Faja y Servos", classes="panel-sub-title")
+                    
+                    with Vertical(classes="config-card"):
+                        yield Static("Faja y Motor", classes="card-title")
+                        with Horizontal(classes="config-row"):
+                            yield Label("Velocidad (0-255):")
+                            yield Input(placeholder="Ej: 180", id="inp-speed")
+                            yield Button("Aplicar", id="btn-apply-speed")
+                        with Horizontal(classes="config-row"):
+                            yield Label("Espaciado (pulsos):")
+                            yield Input(placeholder="Ej: 100", id="inp-spacing")
+                            yield Button("Aplicar", id="btn-apply-spacing")
+                            
+                    with Vertical(classes="config-card"):
+                        yield Static("Servo 1 (Clasificador Principal - CCP2)", classes="card-title")
+                        with Horizontal(classes="config-row"):
+                            yield Label("Home Angle (0-180):")
+                            yield Input(placeholder="90", id="inp-s1-home")
+                            yield Button("Test", id="btn-test-s1-home")
+                        with Horizontal(classes="config-row"):
+                            yield Label("Defl Angle (0-180):")
+                            yield Input(placeholder="0", id="inp-s1-defl")
+                            yield Button("Test", id="btn-test-s1-defl")
+                        with Horizontal(classes="config-row"):
+                            yield Label("Dwell Time (ms):")
+                            yield Input(placeholder="500", id="inp-s1-dwell")
+                            yield Button("Guardar", id="btn-save-s1", variant="success")
+                            
+                    with Vertical(classes="config-card"):
+                        yield Static("Servo 2 (Clasificador Secundario - TMR3)", classes="card-title")
+                        with Horizontal(classes="config-row"):
+                            yield Label("Home Angle (0-180):")
+                            yield Input(placeholder="90", id="inp-s2-home")
+                            yield Button("Test", id="btn-test-s2-home")
+                        with Horizontal(classes="config-row"):
+                            yield Label("Defl Angle (0-180):")
+                            yield Input(placeholder="0", id="inp-s2-defl")
+                            yield Button("Test", id="btn-test-s2-defl")
+                        with Horizontal(classes="config-row"):
+                            yield Label("Dwell Time (ms):")
+                            yield Input(placeholder="500", id="inp-s2-dwell")
+                            yield Button("Guardar", id="btn-save-s2", variant="success")
                 
-            with Horizontal(classes="config-row"):
-                yield Label("Calibrar Sensores de Color:")
-                yield Button("Iniciar Calibración", id="btn-calibrate")
-
-            yield Static("Configuración de Servos (EEPROM)", classes="panel-title")
+                # Columna Derecha: Sensor de Color y Calibración
+                with Vertical(id="config-right-col"):
+                    yield Static("Sensor de Color", classes="panel-sub-title")
+                    
+                    with Vertical(classes="config-card"):
+                        yield Static("Calibración y Sincronización", classes="card-title")
+                        with Horizontal(classes="config-row-actions"):
+                            yield Button("Cargar de EEPROM", id="btn-load-config", variant="primary")
+                            yield Button("Calibrar Color", id="btn-calibrate", variant="warning")
+                    
+                    with Vertical(classes="config-card"):
+                        yield Static("Límites de Umbral de Color (EEPROM)", classes="card-title")
+                        with Horizontal(classes="config-row"):
+                            yield Label("ID (0=Rojo, 1=Verde, 2=Azul):")
+                            yield Input(placeholder="Ej: 0", id="inp-color-id")
+                        with Horizontal(classes="config-row"):
+                            yield Label("Rojo Min/Max:")
+                            yield Input(placeholder="Min", id="inp-color-r-min")
+                            yield Input(placeholder="Max", id="inp-color-r-max")
+                        with Horizontal(classes="config-row"):
+                            yield Label("Verde Min/Max:")
+                            yield Input(placeholder="Min", id="inp-color-g-min")
+                            yield Input(placeholder="Max", id="inp-color-g-max")
+                        with Horizontal(classes="config-row"):
+                            yield Label("Azul Min/Max:")
+                            yield Input(placeholder="Min", id="inp-color-b-min")
+                            yield Input(placeholder="Max", id="inp-color-b-max")
+                        with Horizontal(classes="config-row"):
+                            yield Button("Guardar Umbrales en EEPROM", id="btn-save-color", variant="success")
             
-            with Horizontal(classes="config-row"):
-                yield Label("Servo ID (1 o 2):")
-                yield Input(placeholder="Ej: 1", id="inp-servo-cfg-id")
-                
-            with Horizontal(classes="config-row"):
-                yield Button("Guardar Ángulo Actual como Home", id="btn-save-home", variant="warning")
-                yield Button("Guardar Ángulo Actual como Deflexión", id="btn-save-defl", variant="warning")
-
-            with Horizontal(classes="config-row"):
-                yield Label("Tiempo Dwell (ms):")
-                yield Input(placeholder="Ej: 500", id="inp-servo-dwell")
-                yield Button("Guardar Dwell", id="btn-save-dwell")
-                
-            yield Static("Registro de Colores (Umbrales)", classes="panel-title")
-            with Horizontal(classes="config-row"):
-                yield Label("ID (0=S1, 1=S2):")
-                yield Input(placeholder="Ej: 0", id="inp-color-id")
-            with Horizontal(classes="config-row"):
-                yield Label("Red min/max:")
-                yield Input(placeholder="Min", id="inp-color-r-min")
-                yield Input(placeholder="Max", id="inp-color-r-max")
-            with Horizontal(classes="config-row"):
-                yield Label("Green min/max:")
-                yield Input(placeholder="Min", id="inp-color-g-min")
-                yield Input(placeholder="Max", id="inp-color-g-max")
-            with Horizontal(classes="config-row"):
-                yield Label("Blue min/max:")
-                yield Input(placeholder="Min", id="inp-color-b-min")
-                yield Input(placeholder="Max", id="inp-color-b-max")
-            with Horizontal(classes="config-row"):
-                yield Button("Guardar Umbrales en EEPROM", id="btn-save-color", variant="success")
-                
-                
-            with Horizontal(classes="config-row"):
+            with Horizontal(id="config-footer"):
                 yield Button("Volver al Dashboard", id="btn-back", variant="primary")
+
+    def update_servo_config(self, servo_id: int, config_parts: list) -> None:
+        try:
+            if len(config_parts) < 4:
+                return
+            home_val = config_parts[1]
+            defl_val = config_parts[2]
+            dwell_val = config_parts[3]
+            
+            if servo_id == 1:
+                self.query_one("#inp-s1-home", Input).value = str(home_val)
+                self.query_one("#inp-s1-defl", Input).value = str(defl_val)
+                self.query_one("#inp-s1-dwell", Input).value = str(dwell_val)
+                self.app.notify("Configuración de Servo 1 cargada exitosamente")
+            elif servo_id == 2:
+                self.query_one("#inp-s2-home", Input).value = str(home_val)
+                self.query_one("#inp-s2-defl", Input).value = str(defl_val)
+                self.query_one("#inp-s2-dwell", Input).value = str(dwell_val)
+                self.app.notify("Configuración de Servo 2 cargada exitosamente")
+        except Exception as e:
+            self.app.notify(f"Error cargando servo {servo_id}: {e}", severity="error")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
         if button_id == "btn-back":
             self.app.pop_screen()
+            
+        elif button_id == "btn-load-config":
+            self.app.bt_send("SERVO_GET_CONFIG 1")
+            self.app.bt_send("SERVO_GET_CONFIG 2")
+            self.app.notify("Solicitando configuración al microcontrolador...")
+            
         elif button_id == "btn-apply-speed":
             try:
                 val = self.query_one("#inp-speed", Input).value
@@ -70,41 +130,96 @@ class ConfigScreen(Screen):
                     self.app.notify("Error: Velocidad debe estar entre 0 y 255", severity="error")
             except ValueError:
                 self.app.notify("Error: Ingrese un valor numérico", severity="error")
+                
+        elif button_id == "btn-apply-spacing":
+            try:
+                val = self.query_one("#inp-spacing", Input).value
+                spacing = int(val)
+                self.app.bt_send(f"SET_SPACING {spacing}")
+                self.app.notify(f"Comando enviado: SET_SPACING {spacing}")
+            except ValueError:
+                self.app.notify("Error: Ingrese un valor numérico", severity="error")
+
         elif button_id == "btn-calibrate":
             self.app.bt_send("CALIBRATE")
             self.app.notify("Comando de calibración enviado")
-        elif button_id == "btn-save-home":
+
+        elif button_id == "btn-test-s1-home":
             try:
-                sid = int(self.query_one("#inp-servo-cfg-id", Input).value)
-                if sid == 1 or sid == 2:
-                    self.app.bt_send(f"SERVO_SAVE_HOME {sid}")
-                    self.app.notify(f"Home guardado para Servo {sid}")
-                else:
-                    self.app.notify("Error: Servo ID debe ser 1 o 2", severity="error")
+                val = int(self.query_one("#inp-s1-home", Input).value)
+                self.app.bt_send(f"SERVO 1 {val}")
+                self.app.notify("Probando Home de Servo 1")
             except ValueError:
-                self.app.notify("Error: Ingrese un Servo ID válido", severity="error")
-        elif button_id == "btn-save-defl":
+                self.app.notify("Ingrese un ángulo de Home válido para Servo 1", severity="error")
+
+        elif button_id == "btn-test-s1-defl":
             try:
-                sid = int(self.query_one("#inp-servo-cfg-id", Input).value)
-                if sid == 1 or sid == 2:
-                    self.app.bt_send(f"SERVO_SAVE_DEFLECT {sid}")
-                    self.app.notify(f"Deflexión guardada para Servo {sid}")
-                else:
-                    self.app.notify("Error: Servo ID debe ser 1 o 2", severity="error")
+                val = int(self.query_one("#inp-s1-defl", Input).value)
+                self.app.bt_send(f"SERVO 1 {val}")
+                self.app.notify("Probando Deflexión de Servo 1")
             except ValueError:
-                self.app.notify("Error: Ingrese un Servo ID válido", severity="error")
-        elif button_id == "btn-save-dwell":
+                self.app.notify("Ingrese un ángulo de Deflexión válido para Servo 1", severity="error")
+
+        elif button_id == "btn-test-s2-home":
             try:
-                sid = int(self.query_one("#inp-servo-cfg-id", Input).value)
-                dwell_val = self.query_one("#inp-servo-dwell", Input).value
-                dwell = int(dwell_val)
-                if (sid == 1 or sid == 2) and dwell > 0:
-                    self.app.bt_send(f"SET_DWELL {sid} {dwell}")
-                    self.app.notify(f"Dwell de {dwell}ms guardado para Servo {sid}")
-                else:
-                    self.app.notify("Error: Datos de Servo ID o Dwell inválidos", severity="error")
+                val = int(self.query_one("#inp-s2-home", Input).value)
+                self.app.bt_send(f"SERVO 2 {val}")
+                self.app.notify("Probando Home de Servo 2")
             except ValueError:
-                self.app.notify("Error: Ingrese valores numéricos", severity="error")
+                self.app.notify("Ingrese un ángulo de Home válido para Servo 2", severity="error")
+
+        elif button_id == "btn-test-s2-defl":
+            try:
+                val = int(self.query_one("#inp-s2-defl", Input).value)
+                self.app.bt_send(f"SERVO 2 {val}")
+                self.app.notify("Probando Deflexión de Servo 2")
+            except ValueError:
+                self.app.notify("Ingrese un ángulo de Deflexión válido para Servo 2", severity="error")
+
+        elif button_id == "btn-save-s1":
+            try:
+                home = int(self.query_one("#inp-s1-home", Input).value)
+                defl = int(self.query_one("#inp-s1-defl", Input).value)
+                dwell = int(self.query_one("#inp-s1-dwell", Input).value)
+                
+                async def run_save():
+                    self.app.bt_send(f"SERVO 1 {home}")
+                    await asyncio.sleep(0.2)
+                    self.app.bt_send("SERVO_SAVE_HOME 1")
+                    await asyncio.sleep(0.2)
+                    self.app.bt_send(f"SERVO 1 {defl}")
+                    await asyncio.sleep(0.2)
+                    self.app.bt_send("SERVO_SAVE_DEFLECT 1")
+                    await asyncio.sleep(0.2)
+                    self.app.bt_send(f"SET_DWELL 1 {dwell}")
+                    self.app.notify("Parámetros de Servo 1 guardados exitosamente")
+                
+                asyncio.create_task(run_save())
+            except ValueError:
+                self.app.notify("Error: Rellene Home, Defl y Dwell para Servo 1", severity="error")
+
+        elif button_id == "btn-save-s2":
+            try:
+                home = int(self.query_one("#inp-s2-home", Input).value)
+                defl = int(self.query_one("#inp-s2-defl", Input).value)
+                dwell = int(self.query_one("#inp-s2-dwell", Input).value)
+                
+                async def run_save():
+                    self.app.bt_send(f"SERVO 2 {home}")
+                    await asyncio.sleep(0.2)
+                    self.app.bt_send("SERVO_SAVE_HOME 2")
+                    await asyncio.sleep(0.2)
+                    self.app.bt_send(f"SERVO 2 {defl}")
+                    await asyncio.sleep(0.2)
+                    self.app.bt_send("SERVO_SAVE_DEFLECT 2")
+                    await asyncio.sleep(0.2)
+                    self.app.bt_send(f"SET_DWELL 2 {dwell}")
+                    self.app.notify("Parámetros de Servo 2 guardados exitosamente")
+                
+                asyncio.create_task(run_save())
+            except ValueError:
+                self.app.notify("Error: Rellene Home, Defl y Dwell para Servo 2", severity="error")
+
         elif button_id == "btn-save-color":
             try:
                 idx = int(self.query_one("#inp-color-id", Input).value)
@@ -123,3 +238,11 @@ class ConfigScreen(Screen):
                     self.app.notify("Error: ID debe ser 0, 1 o 2", severity="error")
             except ValueError:
                 self.app.notify("Error: Todos los campos de color deben ser números", severity="error")
+
+    def on_resize(self, event) -> None:
+        if event.size.width >= 90:
+            self.add_class("wide-screen")
+            self.remove_class("narrow-screen")
+        else:
+            self.add_class("narrow-screen")
+            self.remove_class("wide-screen")

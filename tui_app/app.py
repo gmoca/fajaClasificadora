@@ -14,10 +14,17 @@ import platform
 class FajaApp(App):
     TITLE = "Faja Transportadora"
     SUB_TITLE = "PIC18F4550 Control"
+    # agy: Load the stylesheet file
+    CSS_PATH = "app.tcss"
 
+    # agy: Added F1-F4 keyboard navigation bindings
     BINDINGS = [
         Binding("q", "quit", "Salir"),
         Binding("c", "connect", "Conectar BT"),
+        Binding("f1", "show_dashboard", "F1: Dash"),
+        Binding("f2", "show_config", "F2: Config"),
+        Binding("f3", "show_test", "F3: Test"),
+        Binding("f4", "show_logs", "F4: Logs"),
     ]
     
     COLOR_MAP = {
@@ -47,6 +54,25 @@ class FajaApp(App):
         self.set_interval(0.5, self.poll_bluetooth)
         self.set_interval(3.0, self.auto_reconnect)
 
+    # agy: Action method to cleanly switch between screens preventing stack leakage
+    def switch_to_screen(self, screen_name: str):
+        while len(self.screen_stack) > 2:
+            self.pop_screen()
+        if screen_name != "dashboard":
+            self.push_screen(screen_name)
+
+    def action_show_dashboard(self):
+        self.switch_to_screen("dashboard")
+
+    def action_show_config(self):
+        self.switch_to_screen("config")
+
+    def action_show_test(self):
+        self.switch_to_screen("test")
+
+    def action_show_logs(self):
+        self.switch_to_screen("logs")
+
     async def auto_reconnect(self):
         if not self.bt.connected:
             await self.action_connect(silent=True)
@@ -63,13 +89,51 @@ class FajaApp(App):
         try:
             dash = self.query_one(DashboardScreen)
             t = data.get("type", "")
-            if t == "STATE":
-                dash.state = data.get("value", "unknown")
+            
+            # agy: Handle compound telemetry parsing (multiple values in one packet)
+            if t == "COMPOUND":
+                parts = data.get("parts", {})
+                if "state" in parts:
+                    dash.state = parts["state"].upper()
+                if "speed" in parts:
+                    dash.speed = int(parts["speed"])
+                if "pulses" in parts:
+                    dash.pulses = int(parts["pulses"])
+            
+            elif t == "STATE":
+                dash.state = data.get("value", "unknown").upper()
             elif t == "SPEED":
                 dash.speed = data.get("value", 0)
+            elif t == "ENCODER_COUNT":
+                dash.pulses = data.get("pulses", 0)
             elif t == "DETECT":
                 c_idx = str(data.get("color", "-"))
+                # agy: increment color counter on dashboard
+                dash.increment_color_count(c_idx)
                 dash.last_color = self.COLOR_MAP.get(c_idx, f"Idx: {c_idx}")
+            elif t == "JAM":
+                dash.state = "ERROR"
+                dash.log_event(f"[ALERT] Jam detected! Source: {data.get('source', 'unknown')}")
+            
+            # agy: route config messages to the ConfigScreen if mounted
+            if t == "SERVO_CONFIG":
+                try:
+                    self.query_one(ConfigScreen).update_servo_config(data.get("servo"), data.get("config"))
+                except Exception:
+                    pass
+                    
+            # agy: route breakbeams and button status messages to TestScreen if mounted
+            elif t in ("BEAM", "BEAM_MULTI", "BUTTONS", "BUTTON"):
+                try:
+                    ts = self.query_one(TestScreen)
+                    if t == "BEAM":
+                        ts.update_beam(data.get("station"), data.get("state"))
+                    elif t == "BEAM_MULTI":
+                        ts.update_beams_multi(data.get("beams"))
+                    elif t == "BUTTONS":
+                        ts.update_buttons(data.get("up"), data.get("down"), data.get("mode"))
+                except Exception:
+                    pass
 
             raw_line = str(data)
             dash.log_event(raw_line)
@@ -90,25 +154,50 @@ class FajaApp(App):
     async def action_connect(self, silent=False):
         if self.bt.connected:
             return
+            
+        import os
+        is_termux = "TERMUX_VERSION" in os.environ
         is_windows = platform.system() == "Windows"
-        ports = [
-            "COM3" if is_windows else "/dev/rfcomm0",
-            "COM4" if is_windows else "/dev/ttyUSB0",
-            "/dev/rfcomm0" if is_windows else "COM3",
-            "/dev/ttyUSB0",
-            "COM5", "COM6",
-        ]
-        for port in ports:
-            if await self.bt.connect(port):
+        
+        # Prioridad de puertos según plataforma
+        if is_termux:
+            # En celular/Termux, priorizar TCP (puente Serial BT) en puertos comunes
+            tcp_ports = [8080, 9000, 1234]
+            for t_port in tcp_ports:
+                if await self.bt.connect_tcp("127.0.0.1", t_port):
+                    if not silent:
+                        self.notify(f"Conectado vía TCP (127.0.0.1:{t_port})")
+                    return
+            
+            # Fallback a puertos seriales locales de Android/Linux
+            serial_ports = ["/dev/rfcomm0", "/dev/ttyUSB0", "/dev/ttyACM0"]
+            for port in serial_ports:
+                if await self.bt.connect(port):
+                    if not silent:
+                        self.notify(f"Conectado a {port}")
+                    return
+        else:
+            # En PC, priorizar puertos COM locales (Windows) o rfcomm (Linux)
+            ports = [
+                "COM3" if is_windows else "/dev/rfcomm0",
+                "COM4" if is_windows else "/dev/ttyUSB0",
+                "COM5" if is_windows else "/dev/ttyACM0",
+                "COM6", "COM7"
+            ]
+            for port in ports:
+                if await self.bt.connect(port):
+                    if not silent:
+                        self.notify(f"Conectado a {port}")
+                    return
+            
+            # Fallback a TCP en PC
+            if await self.bt.connect_tcp("127.0.0.1", 8080):
                 if not silent:
-                    self.notify(f"Conectado a {port}")
+                    self.notify("Conectado vía TCP (127.0.0.1:8080)")
                 return
-        if await self.bt.connect_tcp("127.0.0.1", 8080):
-            if not silent:
-                self.notify("Conectado vía TCP (Serial BT Bridge)")
-            return
+                
         if not silent:
-            self.notify("No se pudo conectar", severity="error")
+            self.notify("No se pudo establecer conexión", severity="error")
 
 
 if __name__ == "__main__":

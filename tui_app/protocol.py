@@ -22,9 +22,38 @@ CMD_TEST_BUTTON_ECHO = "TEST_BUTTON_ECHO {}"
 
 
 def parse_telemetry(line: str) -> dict:
+    line = line.strip()
+    if not line:
+        return {"type": "UNKNOWN", "raw": line}
+
+    # Support compound space-separated telemetry lines (e.g. "STATE:idle SPEED:0 PULSES:0")
+    if " " in line and ":" in line:
+        parts = line.split()
+        # Verify if all space-separated parts look like key:value
+        # Note: some values might contain colons themselves (like BEAM:1:B), so we check if ':' exists in each part
+        if all(":" in p for p in parts):
+            data = {"type": "COMPOUND", "raw": line, "parts": {}}
+            for p in parts:
+                k, _, v = p.partition(":")
+                # Standardize key names in lowercase
+                k_lower = k.lower()
+                # Parse numeric values if possible
+                try:
+                    if v.isdigit():
+                        data["parts"][k_lower] = int(v)
+                    elif (v.startswith("-") and v[1:].isdigit()):
+                        data["parts"][k_lower] = int(v)
+                    else:
+                        data["parts"][k_lower] = v
+                except ValueError:
+                    data["parts"][k_lower] = v
+            return data
+
     if ":" not in line:
         return {"type": "UNKNOWN", "raw": line}
+        
     key, _, val = line.partition(":")
+    
     if key == "STATE":
         return {"type": "STATE", "value": val}
     elif key == "SPEED":
@@ -45,14 +74,35 @@ def parse_telemetry(line: str) -> dict:
         return {"type": "STATUS", "state": parts[0], "speed": int(parts[1]) if len(parts) > 1 else 0}
     elif key == "CALIB_DONE":
         return {"type": "CALIB_DONE"}
-    elif key == "SERVO_CONFIG":
+    elif key in ("SERVO_CONFIG", "SERVO_CFG"):
         parts = val.split(",")
         return {"type": "SERVO_CONFIG", "servo": int(parts[0]) if parts else 0, "config": parts}
-    elif key == "ENCODER_COUNT":
+    elif key in ("ENCODER_COUNT", "ENC"):
         return {"type": "ENCODER_COUNT", "pulses": int(val)}
     elif key == "BEAM":
-        parts = val.split(":")
-        return {"type": "BEAM", "station": int(parts[0]), "state": parts[1]}
-    elif key == "BUTTON":
-        return {"type": "BUTTON", "id": int(val)}
+        if " " in val:
+            # Format: BEAM:1:B 2:C
+            subparts = val.split()
+            beams = {}
+            for sp in subparts:
+                sp_key, _, sp_val = sp.partition(":")
+                beams[int(sp_key)] = sp_val
+            return {"type": "BEAM_MULTI", "beams": beams}
+        else:
+            parts = val.split(":")
+            return {"type": "BEAM", "station": int(parts[0]), "state": parts[1]}
+    elif key == "BUTTON" or key == "BTN":
+        if len(val) == 3 and all(c in "01" for c in val):
+            return {
+                "type": "BUTTONS",
+                "up": val[0] == '1',
+                "down": val[1] == '1',
+                "mode": val[2] == '1',
+                "raw": val
+            }
+        else:
+            try:
+                return {"type": "BUTTON", "id": int(val)}
+            except ValueError:
+                return {"type": "BUTTON", "raw": val}
     return {"type": "UNKNOWN", "raw": line}

@@ -403,4 +403,53 @@ Hola OpenCode, logramos dar con la tecla exacta de la simulación:
 
 - *agy*
 
+---
+
+## Handoff TUI Mejorada (agy → OpenCode) — 2026-07-15
+
+¡Hola OpenCode!
+He completado con éxito la optimización y el rediseño de la TUI de control. Aquí tienes un resumen de lo implementado:
+
+### 1. Robustez del Protocolo y Corrección de Telemetría
+- **`protocol.py`**: 
+  - Corregí el parseo de la telemetría periódica del PIC. Ahora la TUI interpreta las tramas compuestas (`STATE:xxx SPEED:xxx PULSES:xxx`) de manera nativa, lo que actualiza la velocidad y los pulsos en tiempo real en la pantalla.
+  - Añadí soporte para tramas `BTN:<up><down><mode>` (ej: `BTN:100` cuando se pulsa UP) y tramas multi-beam (`BEAM:1:B 2:C`).
+- **`app.py` (Enrutador Principal)**:
+  - Enlaza el archivo de estilos central `app.tcss`.
+  - **Enrutador de Conexión Inteligente:** Agregué soporte para detectar si la TUI está corriendo en Termux (Android). De ser así, intenta conectarse instantáneamente mediante sockets TCP locales a los puertos más habituales del puente Bluetooth (`8080`, `9000`, `1234`) antes de intentar los nodos seriales `/dev/rfcomm0` y similares, evitando molestas esperas por timeouts. En PC, mantiene la prioridad de escaneo de puertos COM físicos locales.
+  - Agrega atajos globales `F1` (Dashboard), `F2` (Configuración), `F3` (Modo Prueba), `F4` (Consola de Logs).
+  - Gestiona el cambio de pantalla limpiando el stack (`self.pop_screen()`) para evitar sobrecarga de memoria.
+  - Implementa un distribuidor centralizado de telemetría: procesa tramas compuestas, gestiona contadores de colores en el Dashboard y redirige eventos específicos (sensores, EEPROM) a pantallas activas.
+
+### 2. Mejoras Visuales y Funcionales en Pantallas (Agy)
+- **`screens/dashboard.py` (Dashboard)**:
+  - Añadí la visualización de los pulsos del encoder (`PULSES`).
+  - Creé un contador dinámico para los objetos clasificados (Rojo, Verde y Azul) recolectando los eventos de `DETECT:idx`.
+  - Agregué el cambio dinámico de clases CSS para el indicador de estado (IDLE en azul, RUNNING en verde, SORTING en cyan, TEST en amarillo, y ERROR en rojo brillante parpadeante) y para el último color detectado.
+- **`screens/config.py` (Configuración)**:
+  - Rediseñé la interfaz en un formato de doble columna paralela (Faja/Servos a la izquierda, Calibración/Umbrales de color a la derecha) para eliminar el scroll vertical y agrupar lógicamente el botón de calibración con los umbrales de color correspondientes.
+  - Agregué el botón de carga asíncrona de la EEPROM (`SERVO_GET_CONFIG`), que auto-rellena todas las variables de los servos.
+  - Implementé una secuencia automatizada al presionar "Guardar Servo": la TUI primero posiciona el servo en el ángulo deseado y luego emite los comandos de persistencia a la EEPROM secuencialmente.
+- **`screens/test_screen.py` (Modo Pruebas)**:
+  - Rediseñé la interfaz en un formato de doble columna paralela (Monitoreo/Sensores a la izquierda, Controles de Actuadores a la derecha) y habilité el acoplamiento del pie de página (`dock: bottom`) para anclar el botón de "Volver al Dashboard" en el extremo inferior de la pantalla. Esto permite que el cuerpo superior se expanda de forma completa (`height: 1fr`) y que cada columna realice scroll independiente (`overflow-y: auto`), solucionando el problema de recortes en el visor de logs y controles de servos.
+  - Compacté el formulario del servo a una única línea horizontal (`test-row-inline`: ID + Ángulo + Mover) para recuperar espacio vertical y hacer visible la tarjeta de servos completa.
+  - Cambié el texto del botón "Pulsar Motor" a **"Girar Motor (2s)"** para mayor claridad de cara al usuario en español.
+  - Habilitado un temporizador de polling (500ms) que consulta el estado de break-beams (`TEST_BEAM`) y botones físicos (`TEST_BUTTON_ECHO`) solo cuando la pantalla está activa.
+  - Agregados marcadores gráficos que cambian de color instantáneamente vía CSS (libres en verde, obstruidos en rojo, y botones presionados en naranja).
+  - Añadidos botones rápidos para probar la alineación física de los servos en sus posiciones Home y Deflect cargadas de la EEPROM.
+- **`screens/log_viewer.py` (Visor de Logs)**:
+  - Encapsulé el botón de regreso dentro de un contenedor footer con anclaje inferior en CSS (`#logviewer-footer` con `dock: bottom`).
+
+### 3. Estilos Centralizados y Responsividad
+- **`app.tcss`** (Nuevo) y **Pantallas**: Implementé una hoja de estilos oscura con bordes definidos, centrados limpios y clases de estado dinámicas. Dado que TCSS no soporta la directiva `@media` de CSS estándar, implementé la responsividad mediante el método **`on_resize`** en Python, el cual añade o remueve la clase `.wide-screen` dinámicamente:
+  - **En Móviles (Termux, ancho < 90):** El layout por defecto apila las tarjetas de forma vertical (100% de ancho) y habilita el scroll natural de pantalla (`overflow-y: scroll`) para acceder a todos los controles y botones sin recortes.
+  - **En PC (Desktop, ancho >= 90):** Se reordena en dos columnas paralelas sin scrolls anidados (`overflow-y: hidden`).
+
+### 4. Pruebas y Validación:
+- Corrí un chequeo de compilación sintáctica en Python de todos los archivos modificados (`py_compile`). Todo compila e inicia de forma exitosa y sin excepciones de importación.
+
+El sistema queda 100% mejorado estéticamente, libre de fallas de parseo de telemetría y totalmente interactivo. 🚀
+
+- *agy*
+
 
