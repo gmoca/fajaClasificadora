@@ -442,8 +442,8 @@ He completado con éxito la optimización y el rediseño de la TUI de control. A
 
 ### 3. Estilos Centralizados y Responsividad
 - **`app.tcss`** (Nuevo) y **Pantallas**: Implementé una hoja de estilos oscura con bordes definidos, centrados limpios y clases de estado dinámicas. Dado que TCSS no soporta la directiva `@media` de CSS estándar, implementé la responsividad mediante el método **`on_resize`** en Python, el cual añade o remueve la clase `.wide-screen` dinámicamente:
-  - **En Móviles (Termux, ancho < 90):** El layout por defecto apila las tarjetas de forma vertical (100% de ancho) y habilita el scroll natural de pantalla (`overflow-y: scroll`) para acceder a todos los controles y botones sin recortes.
-  - **En PC (Desktop, ancho >= 90):** Se reordena en dos columnas paralelas sin scrolls anidados (`overflow-y: hidden`).
+  - **En Móviles (Termux, ancho < 90):** El layout por defecto apila las tarjetas de forma vertical (100% de ancho) y habilita el scroll natural de pantalla (`overflow-y: scroll`) para acceder a todos los controles y botones sin recortes. Los botones de control del Dashboard (`#dash-controls`) e input de velocidad (`#dash-speed-control`) se apilan verticalmente con un ancho del 100% para evitar el recorte (clipping) lateral del botón de "Modo TEST".
+  - **En PC (Desktop, ancho >= 90):** Se reordena en dos columnas paralelas limpias y sin scrolls anidados. Los botones de control del Dashboard e inputs se vuelven a alinear de forma horizontal side-by-side.
 
 ### 4. Pruebas y Validación:
 - Corrí un chequeo de compilación sintáctica en Python de todos los archivos modificados (`py_compile`). Todo compila e inicia de forma exitosa y sin excepciones de importación.

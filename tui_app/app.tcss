@@ -71,6 +71,7 @@ Footer {
 }
 
 #dash-controls {
+    layout: vertical;
     height: auto;
     align: center middle;
     margin: 1;
@@ -79,7 +80,22 @@ Footer {
     padding: 1;
 }
 
+#dash-controls Button {
+    width: 100%;
+    margin: 0 0 1 0;
+}
+
+.wide-screen #dash-controls {
+    layout: horizontal;
+}
+
+.wide-screen #dash-controls Button {
+    width: auto;
+    margin: 0 1;
+}
+
 #dash-speed-control {
+    layout: vertical;
     height: auto;
     align: center middle;
     margin: 0 1 1 1;
@@ -88,16 +104,19 @@ Footer {
     padding: 1;
 }
 
-#btn-start {
-    margin: 0 1;
+#dash-speed-control Input {
+    width: 100%;
+    margin-top: 1;
 }
 
-#btn-stop {
-    margin: 0 1;
+.wide-screen #dash-speed-control {
+    layout: horizontal;
 }
 
-#btn-config, #btn-logs, #btn-test {
-    margin: 0 1;
+.wide-screen #dash-speed-control Input {
+    width: 15;
+    margin-top: 0;
+    margin-left: 2;
 }
 
 /* Specific stats widgets */
