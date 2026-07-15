@@ -5,18 +5,15 @@
 
 static uint8_t eeprom_read_byte(uint8_t addr) {
     while (EECON1bits.WR);
-    while (EECON1bits.RD);  // Wait for any active read to complete
     EEADR = addr;
     EECON1bits.EEPGD = 0;
     EECON1bits.CFGS = 0;
     EECON1bits.RD = 1;
-    while (EECON1bits.RD);  // Wait for this read to complete
     return EEDATA;
 }
 
 static void eeprom_write_byte(uint8_t addr, uint8_t val) {
     while (EECON1bits.WR);
-    while (EECON1bits.RD);  // Wait for any active read to complete
     EEADR = addr;
     EEDATA = val;
     EECON1bits.EEPGD = 0;
