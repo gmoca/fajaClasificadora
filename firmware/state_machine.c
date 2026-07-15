@@ -12,6 +12,12 @@
 #include "anti_jam.h"
 #include <string.h>
 
+static void safe_delay_ms(uint16_t ms) {
+    while (ms--) {
+        __delay_ms(1);
+    }
+}
+
 static void u16_to_str(char *buf, uint16_t val) {
     char tmp[6];
     uint8_t i = 0;
@@ -305,7 +311,7 @@ void state_machine_run(void) {
                 load_menu_values();
                 lcd_clear();
                 lcd_print("MENU CALIB");
-                __delay_ms(800);
+                safe_delay_ms(800);
                 lcd_clear();
                 idle_long_pressed = 1;
                 gpio_button_pressed(BTN_MODE); // Consume the edge
@@ -468,7 +474,7 @@ void state_machine_run(void) {
                             menu_active = 0;
                             lcd_clear();
                             lcd_print("MENU SALIDA");
-                            __delay_ms(800);
+                            safe_delay_ms(800);
                             lcd_clear();
                             lcd_print("IDLE");
                             if (gpio_button_state(BTN_MODE)) {
@@ -478,7 +484,7 @@ void state_machine_run(void) {
                             save_current_menu_value();
                             lcd_clear();
                             lcd_print("GUARDADO!");
-                            __delay_ms(800);
+                            safe_delay_ms(800);
                             lcd_clear();
                         }
                         mode_long_pressed = 1;
