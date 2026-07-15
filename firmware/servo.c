@@ -62,15 +62,10 @@ void servo_ccp2_isr(void) {
         CCP2CONbits.CCP2M = 0b1001;  // Compare mode, force low on match
         CCPR2 = servo1_pulse;
         phase = 1;
-    } else if (phase == 1) {
+    } else {
         CCP2CONbits.CCP2M = 0b1011;  // Compare mode, trigger special event (reset TMR1)
         CCPR2 = SERVO_FRAME_TICKS;
-        phase = 2;
-    } else {
         phase = 0;
-        LATCbits.LATC1 = 1;
-        CCP2CONbits.CCP2M = 0b1001;  // Compare mode, force low on match
-        CCPR2 = servo1_pulse;
     }
 }
 
