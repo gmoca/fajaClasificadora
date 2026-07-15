@@ -292,8 +292,7 @@ void state_machine_run(void) {
                 load_menu_values();
                 lcd_clear();
                 lcd_print("MENU CALIB");
-                uint32_t delay_until = system_ticks + 800;
-                while (system_ticks < delay_until);
+                __delay_ms(800);
                 lcd_clear();
                 idle_long_pressed = 1;
                 gpio_button_pressed(BTN_MODE); // Consume the edge
@@ -448,16 +447,14 @@ void state_machine_run(void) {
                             menu_active = 0;
                             lcd_clear();
                             lcd_print("MENU SALIDA");
-                            uint32_t delay_until = system_ticks + 800;
-                            while (system_ticks < delay_until);
+                            __delay_ms(800);
                             lcd_clear();
                             lcd_print("IDLE");
                         } else {
                             save_current_menu_value();
                             lcd_clear();
                             lcd_print("GUARDADO!");
-                            uint32_t delay_until = system_ticks + 800;
-                            while (system_ticks < delay_until);
+                            __delay_ms(800);
                             lcd_clear();
                         }
                         mode_long_pressed = 1;
