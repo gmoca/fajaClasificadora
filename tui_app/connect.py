@@ -27,12 +27,18 @@ class BTManager:
 
     async def connect_tcp(self, host: str = "127.0.0.1", port: int = 8080) -> bool:
         try:
+            with open("tui_log.txt", "a") as f:
+                f.write(f"Intentando conectar TCP a {host}:{port}...\n")
             self.reader, self.writer = await asyncio.open_connection(host, port)
             self._connected = True
             self._mode = "tcp"
+            with open("tui_log.txt", "a") as f:
+                f.write("¡Conexión TCP exitosa!\n")
             return True
-        except Exception:
+        except Exception as e:
             self._connected = False
+            with open("tui_log.txt", "a") as f:
+                f.write(f"Fallo conexión TCP: {e}\n")
             return False
 
     async def disconnect(self):
@@ -42,6 +48,8 @@ class BTManager:
                 await self.writer.wait_closed()
         self._connected = False
         self._mode = None
+        with open("tui_log.txt", "a") as f:
+            f.write("Desconectado.\n")
 
     async def send(self, cmd: str):
         if self.writer and self._connected:
@@ -52,10 +60,19 @@ class BTManager:
         if not self.reader or not self._connected:
             return None
         try:
-            line = await asyncio.wait_for(self.reader.readline(), timeout=0.1)
-            return line.decode(errors='ignore').strip() if line else None
+            # Aumentamos el timeout a 0.4s para evitar falsos timeouts con datos segmentados
+            line = await asyncio.wait_for(self.reader.readline(), timeout=0.4)
+            if line:
+                decoded = line.decode(errors='ignore').strip()
+                with open("tui_log.txt", "a") as f:
+                    f.write(f"Leído: {decoded}\n")
+                return decoded
+            return None
         except asyncio.TimeoutError:
+            # No loggear timeouts para no llenar el archivo, es normal si el PIC no envía nada
             return None
         except Exception as e:
             self._connected = False
+            with open("tui_log.txt", "a") as f:
+                f.write(f"Excepción en lectura: {e}\n")
             return None
