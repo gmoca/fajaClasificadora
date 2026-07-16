@@ -19,6 +19,7 @@ void anti_jam_check(void) {
         return; 
     }
     
+    /* COMENTADO TEMPORALMENTE PARA PRUEBAS EN FÍSICO SIN ENCODER
     if (encoder_get_speed_mm_s() == 0) {
         if (zero_speed_start == 0) {
             zero_speed_start = system_ticks;
@@ -29,6 +30,7 @@ void anti_jam_check(void) {
     } else {
         zero_speed_start = 0;
     }
+    */
     
     // Check continuous break-beam blockage (more than 3 seconds)
     static uint32_t beam_block_start = 0;
