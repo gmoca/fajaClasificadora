@@ -53,9 +53,9 @@ class BTManager:
             return None
         try:
             line = await asyncio.wait_for(self.reader.readline(), timeout=0.1)
-            return line.decode().strip() if line else None
+            return line.decode(errors='ignore').strip() if line else None
         except asyncio.TimeoutError:
             return None
-        except Exception:
+        except Exception as e:
             self._connected = False
             return None
