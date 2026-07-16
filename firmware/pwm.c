@@ -8,6 +8,8 @@ void pwm_hbridge_init(void) {
 }
 
 void pwm_hbridge_set_duty(uint8_t duty) {
-    CCPR1L = duty >> 2;
-    CCP1CONbits.DC1B = duty & 0x03;
+    // Escalar de 0-255 a 0-1000 (resolución máxima de PR2 = 249)
+    uint16_t val = ((uint16_t)duty * 1000) / 255;
+    CCPR1L = val >> 2;
+    CCP1CONbits.DC1B = val & 0x03;
 }
