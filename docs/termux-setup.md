@@ -97,24 +97,19 @@ python app.py
 # La app intentará /dev/rfcomm0 automáticamente
 ```
 
-### Método B: Serial Bluetooth Terminal (recomendado, sin root)
+### Método B: Bluetooth TCP Bridge (recomendado, sin root)
 
-Usa la app **Serial Bluetooth Terminal** de Kai Morich en Android como puente TCP local.
-
-```
-https://play.google.com/store/apps/details?id=de.kai_morich.serial_bluetooth_terminal
-```
+Usa la app **Bluetooth TCP Bridge** (del desarrollador Marek Masár) en Android como puente TCP local.
 
 #### Pasos:
 
 1.  **Parear el HC-05** desde Ajustes → Bluetooth del teléfono.
-2.  **Abrir Serial Bluetooth Terminal**.
-3.  Presionar el ícono de conexión (↕) → seleccionar **Devices**.
-4.  Elegir el HC-05 de la lista.
-5.  Una vez conectado, presionar el botón de menú (⋮) → **TCP Server**.
-6.  Elegir puerto **8080** (o 9000 / 1234).
-7.  Activar **Start Server** — la app mostrará "TCP server started on port 8080".
-8.  En Termux, ejecuta la TUI con el script automático o comando manual.
+2.  **Abrir la app Bluetooth TCP Bridge**.
+3.  Seleccionar tu módulo HC-05 en la sección de dispositivos Bluetooth.
+4.  Ir a la sección de configuración de red dentro de la app y habilitar el **TCP Server**.
+5.  Elegir puerto **8080** (o 9000 / 1234).
+6.  Conectar ambos extremos.
+7.  En Termux, ejecuta la TUI con el script automático o comando manual.
     La TUI detectará que corre en Termux e intentará la conexión TCP local de forma inmediata.
 
 #### Verificar conexión:
