@@ -145,8 +145,9 @@ class FajaApp(App):
                 self.query_one(TestScreen).log_event(raw_line)
             except Exception:
                 pass
-        except Exception:
-            pass
+        except Exception as e:
+            with open("tui_log.txt", "a") as f:
+                f.write(f"Error en update_dashboard: {e}\n")
 
     def bt_send(self, cmd: str):
         asyncio.create_task(self.bt.send(cmd))
