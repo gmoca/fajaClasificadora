@@ -85,9 +85,28 @@ class FajaApp(App):
             data = parse_telemetry(line)
             self.update_dashboard(data)
 
+    def get_screen_safe(self, name: str, class_type):
+        # Primero intentamos obtener la pantalla por su nombre registrado
+        try:
+            return self.get_screen(name)
+        except Exception:
+            pass
+        # Si no, probamos si está activa y podemos buscarla por tipo
+        try:
+            return self.query_one(class_type)
+        except Exception:
+            pass
+        # Si la pantalla actual es de ese tipo, la retornamos directamente
+        if isinstance(self.screen, class_type):
+            return self.screen
+        return None
+
     def update_dashboard(self, data: dict):
         try:
-            dash = self.query_one(DashboardScreen)
+            dash = self.get_screen_safe("dashboard", DashboardScreen)
+            if not dash:
+                return
+                
             t = data.get("type", "")
             
             # agy: Handle compound telemetry parsing (multiple values in one packet)
@@ -117,34 +136,45 @@ class FajaApp(App):
             
             # agy: route config messages to the ConfigScreen if mounted
             if t == "SERVO_CONFIG":
-                try:
-                    self.query_one(ConfigScreen).update_servo_config(data.get("servo"), data.get("config"))
-                except Exception:
-                    pass
+                cfg_scr = self.get_screen_safe("config", ConfigScreen)
+                if cfg_scr:
+                    try:
+                        cfg_scr.update_servo_config(data.get("servo"), data.get("config"))
+                    except Exception as e:
+                        with open("tui_log.txt", "a") as f:
+                            f.write(f"Error actualizando config screen: {e}\n")
                     
             # agy: route breakbeams and button status messages to TestScreen if mounted
             elif t in ("BEAM", "BEAM_MULTI", "BUTTONS", "BUTTON"):
-                try:
-                    ts = self.query_one(TestScreen)
-                    if t == "BEAM":
-                        ts.update_beam(data.get("station"), data.get("state"))
-                    elif t == "BEAM_MULTI":
-                        ts.update_beams_multi(data.get("beams"))
-                    elif t == "BUTTONS":
-                        ts.update_buttons(data.get("up"), data.get("down"), data.get("mode"))
-                except Exception:
-                    pass
+                ts = self.get_screen_safe("test", TestScreen)
+                if ts:
+                    try:
+                        if t == "BEAM":
+                            ts.update_beam(data.get("station"), data.get("state"))
+                        elif t == "BEAM_MULTI":
+                            ts.update_beams_multi(data.get("beams"))
+                        elif t == "BUTTONS":
+                            ts.update_buttons(data.get("up"), data.get("down"), data.get("mode"))
+                    except Exception as e:
+                        with open("tui_log.txt", "a") as f:
+                            f.write(f"Error actualizando test screen: {e}\n")
 
             raw_line = str(data)
             dash.log_event(raw_line)
-            try:
-                self.query_one(LogViewerScreen).log_event(raw_line)
-            except Exception:
-                pass
-            try:
-                self.query_one(TestScreen).log_event(raw_line)
-            except Exception:
-                pass
+            
+            log_scr = self.get_screen_safe("logs", LogViewerScreen)
+            if log_scr:
+                try:
+                    log_scr.log_event(raw_line)
+                except Exception:
+                    pass
+                    
+            ts_scr = self.get_screen_safe("test", TestScreen)
+            if ts_scr:
+                try:
+                    ts_scr.log_event(raw_line)
+                except Exception:
+                    pass
         except Exception as e:
             with open("tui_log.txt", "a") as f:
                 f.write(f"Error en update_dashboard: {e}\n")
