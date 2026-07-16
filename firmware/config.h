@@ -30,7 +30,7 @@
 #define FOSC_HZ     20000000UL
 #define FCYC_HZ     (FOSC_HZ / 4)
 
-#define SPBRG_VAL   42  // 115200 baud at 20MHz (exact integer calculation)
+#define SPBRG_VAL   520 // 9600 baud at 20MHz (factory default HC-05)
 
 #define TMR0_RELOAD 64911
 
