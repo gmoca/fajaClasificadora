@@ -8,8 +8,14 @@ void pwm_hbridge_init(void) {
 }
 
 void pwm_hbridge_set_duty(uint8_t duty) {
-    // Escalar de 0-255 a 0-1000 (resolución máxima de PR2 = 249)
-    uint16_t val = ((uint16_t)duty * 1000) / 255;
-    CCPR1L = val >> 2;
-    CCP1CONbits.DC1B = val & 0x03;
+    // TEMPORAL: Apagamos el módulo PWM y forzamos RC2 como salida digital simple (HIGH/LOW)
+    // para descartar si el problema es de cableado físico o del oscilador de PWM.
+    CCP1CON = 0;  // Desactiva el módulo CCP1 (PWM) para que el pin actúe como GPIO normal
+    TRISCbits.TRISC2 = 0; // Asegura que RC2 es salida
+    
+    if (duty > 0) {
+        LATCbits.LATC2 = 1;  // Fuerza 5V en RC2
+    } else {
+        LATCbits.LATC2 = 0;  // Fuerza 0V en RC2
+    }
 }
