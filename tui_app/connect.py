@@ -53,6 +53,8 @@ class BTManager:
 
     async def send(self, cmd: str):
         if self.writer and self._connected:
+            with open("tui_log.txt", "a") as f:
+                f.write(f"Enviado: {cmd}\n")
             self.writer.write((cmd + "\n").encode())
             await self.writer.drain()
 

@@ -134,7 +134,7 @@ class FajaApp(App):
                 dash.state = "ERROR"
                 dash.log_event(f"[ALERT] Jam detected! Source: {data.get('source', 'unknown')}")
             
-            # agy: route config messages to the ConfigScreen if mounted
+            # agy: route config messages to the ConfigScreen and TestScreen if mounted
             if t == "SERVO_CONFIG":
                 cfg_scr = self.get_screen_safe("config", ConfigScreen)
                 if cfg_scr:
@@ -143,6 +143,14 @@ class FajaApp(App):
                     except Exception as e:
                         with open("tui_log.txt", "a") as f:
                             f.write(f"Error actualizando config screen: {e}\n")
+                
+                ts_scr = self.get_screen_safe("test", TestScreen)
+                if ts_scr:
+                    try:
+                        ts_scr.handle_servo_config(data.get("servo"), data.get("config"))
+                    except Exception as e:
+                        with open("tui_log.txt", "a") as f:
+                            f.write(f"Error en TestScreen handle_servo_config: {e}\n")
                     
             # agy: route breakbeams and button status messages to TestScreen if mounted
             elif t in ("BEAM", "BEAM_MULTI", "BUTTONS", "BUTTON"):
