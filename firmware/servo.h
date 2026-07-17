@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#define SERVO_PULSE_MIN    2500  // 1.0 ms @ 400 ns/tick
-#define SERVO_PULSE_MAX    5000  // 2.0 ms @ 400 ns/tick
+#define SERVO_PULSE_MIN    1250  // 0.5 ms @ 400 ns/tick (SG90 9g)
+#define SERVO_PULSE_MAX    6250  // 2.5 ms @ 400 ns/tick (SG90 9g)
 #define SERVO_PULSE_NEUT   3750  // 1.5 ms @ 400 ns/tick
 #define SERVO_FRAME_TICKS  50000U // 20 ms @ 400 ns/tick
 
