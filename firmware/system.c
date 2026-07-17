@@ -33,7 +33,7 @@ void system_init(void) {
 
     T3CONbits.T3CCP2 = 0;
 
-    T2CON = 0x04;  // Prescaler 1:1, Postscaler 1:1, Timer2 ON
+    T2CON = 0x06;  // Prescaler 1:16, Postscaler 1:1, Timer2 ON (1.25kHz PWM)
     PR2 = 249;
 
     INTCONbits.GIEH = 1;
