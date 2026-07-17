@@ -2,7 +2,7 @@
 #include "config.h"
 
 void pwm_hbridge_init(void) {
-    CCP1CONbits.CCP1M = 0b1100;
+    CCP1CON = 0x0C;  // Single output PWM, P1A (RC2) active-high
     CCPR1L = 0;
     TRISCbits.TRISC2 = 0;
 }

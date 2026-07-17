@@ -33,9 +33,8 @@ void system_init(void) {
 
     T3CONbits.T3CCP2 = 0;
 
-    T2CONbits.T2CKPS = 0b00;
+    T2CON = 0x04;  // Prescaler 1:1, Postscaler 1:1, Timer2 ON
     PR2 = 249;
-    T2CONbits.TMR2ON = 1;
 
     INTCONbits.GIEH = 1;
     INTCONbits.GIEL = 1;
