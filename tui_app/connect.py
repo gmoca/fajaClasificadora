@@ -69,7 +69,12 @@ class BTManager:
                 with open("tui_log.txt", "a") as f:
                     f.write(f"Leído: {decoded}\n")
                 return decoded
-            return None
+            else:
+                # b'' significa EOF, indicativo de pérdida de conexión física o socket cerrado
+                self._connected = False
+                with open("tui_log.txt", "a") as f:
+                    f.write("Lectura retornó vacío (EOF). Desconectando...\n")
+                return None
         except asyncio.TimeoutError:
             # No loggear timeouts para no llenar el archivo, es normal si el PIC no envía nada
             return None

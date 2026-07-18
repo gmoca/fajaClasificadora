@@ -427,6 +427,35 @@ Footer {
     margin-right: 1;
 }
 
+.color-preview-box {
+    text-align: center;
+    background: #1e293b;
+    border: solid #475569;
+    color: #94a3b8;
+    height: 3;
+    content-align: center middle;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+.preview-rojo {
+    background: #991b1b !important;
+    color: #fee2e2 !important;
+    border: double #ef4444 !important;
+}
+
+.preview-verde {
+    background: #065f46 !important;
+    color: #d1fae5 !important;
+    border: double #10b981 !important;
+}
+
+.preview-azul {
+    background: #1e40af !important;
+    color: #dbeafe !important;
+    border: double #3b82f6 !important;
+}
+
 .btn-indicator {
     border: solid #475569;
     background: #1e293b;

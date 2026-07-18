@@ -28,6 +28,10 @@ class TestScreen(Screen):
                             yield Static("C: -", id="lbl-color-c", classes="color-indicator")
                             
                     with Vertical(classes="test-card"):
+                        yield Static("Color Dominante Estimado", classes="card-title")
+                        yield Static("[ NINGUNO ]", id="lbl-test-detected-color", classes="color-preview-box")
+                            
+                    with Vertical(classes="test-card"):
                         yield Static("Botones Físicos (PIC)", classes="card-title")
                         with Horizontal(classes="test-indicator-row"):
                             yield Static("UP", id="lbl-btn-up", classes="btn-indicator")
@@ -122,6 +126,27 @@ class TestScreen(Screen):
             self.query_one("#lbl-color-g", Static).update(f"G: {g}")
             self.query_one("#lbl-color-b", Static).update(f"B: {b}")
             self.query_one("#lbl-color-c", Static).update(f"C: {c}")
+            
+            # Estimación del color dominante
+            widget = self.query_one("#lbl-test-detected-color", Static)
+            widget.remove_class("preview-rojo")
+            widget.remove_class("preview-verde")
+            widget.remove_class("preview-azul")
+            
+            # Evitar ruido de oscuridad (si Clear < 100)
+            if c < 100:
+                widget.update("[ NINGUNO ]")
+            elif r > g and r > b:
+                widget.update("[ ROJO ]")
+                widget.add_class("preview-rojo")
+            elif g > r and g > b:
+                widget.update("[ VERDE ]")
+                widget.add_class("preview-verde")
+            elif b > r and b > g:
+                widget.update("[ AZUL ]")
+                widget.add_class("preview-azul")
+            else:
+                widget.update("[ INDETERMINADO ]")
         except:
             pass
 
