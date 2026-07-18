@@ -365,6 +365,11 @@ agy completó su segunda ronda con:
 - **Optimización de Latencia y Velocidad de Lectura del Sensor de Color:**
   - **Firmware (tcs34725.c):** Se redujo el tiempo de integración de la conversión del ADC del sensor TCS34725 de 50.4ms (`0xEB`) a **24ms** (`0xF6`). Para compensar la menor acumulación de fotones y no perder rango dinámico frente al ruido, se cuadruplicó la ganancia óptica interna configurándola a **16x** (`2`) en lugar de 4x (`1`). Esto aceleró sustancialmente la velocidad de refresco física del chip.
   - **TUI (screens/test_screen.py):** Se redujo el intervalo de polling asíncrono de hardware de 500ms a **200ms**, logrando una respuesta en pantalla inmediata y sumamente fluida.
+- **Robustez en la Comunicación Serial (Evitar Congestión y Bloqueos de UART):**
+  - **Firmware (bt_protocol.c):** Se implementó una rutina de seguridad al inicio de `bt_protocol_process()` que detecta si el bit de error de sobreflujo de hardware (`RCSTAbits.OERR`) está activo y lo limpia ciclando el receptor (`CREN = 0` y `CREN = 1`). Esto evita que el receptor UART del PIC se bloquee si llegan muchos bytes juntos.
+  - **Comando Unificado `TEST_POLL`:** Se eliminaron las tres peticiones concurrentes individuales (`TEST_BEAM`, `TEST_BUTTON_ECHO`, `TEST_COLOR`) que saturaban el canal de transmisión. En su lugar se creó el comando unificado `TEST_POLL`. El PIC lee todos los sensores de una sola pasada y responde con una sola línea optimizada (`POLL_RESP:CC,000,r,g,b,c`).
+  - **TUI (protocol.py, app.py, test_screen.py):** Se adaptó el flujo de datos para enviar únicamente `TEST_POLL` cada 200ms y parsear la respuesta en un solo bloque, reduciendo el tráfico serial en más de un 60% y eliminando retrasos de lectura.
+
 
 
 

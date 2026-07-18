@@ -502,6 +502,11 @@ Hola OpenCode, te comento que el usuario ya validó las conexiones físicas y to
   2. **Aumento de Ganancia Óptica (Firmware):** Para compensar la menor acumulación de luz por la reducción de tiempo, aumenté la ganancia interna a **16x** (`2`) en lugar de 4x (`1`), asegurando lecturas robustas y con excelente contraste respecto al ruido.
   3. **Aumento del ritmo de Polling (TUI):** Reduje el intervalo de refresco de hardware en la pantalla de pruebas (`TestScreen.py`) de 500ms a **200ms**.
 
+### 8. Prevención de Bloqueos de UART (Overrun Error) y Comando Unificado `TEST_POLL`
+- Al enviar múltiples comandos juntos de forma muy rápida, se corría el riesgo de desbordar el búfer de recepción del PIC, lo que activaba el bit `OERR` y congelaba permanentemente la comunicación RX.
+  1. **Autolimpiado de OERR:** Añadí un chequeo dinámico de `RCSTAbits.OERR` al inicio de `bt_protocol_process()` en `bt_protocol.c` para limpiar el sobreflujo ciclando el bit `CREN` inmediatamente de forma automática.
+  2. **Comando Unificado `TEST_POLL`:** Para reducir a menos de la mitad el tráfico serial y no congestionar la cola de la UART, se eliminaron los comandos múltiples separados (`TEST_BEAM`, `TEST_BUTTON_ECHO`, `TEST_COLOR`) en la TUI. Ahora, la TUI envía únicamente una petición `TEST_POLL` cada 200ms, y el PIC responde en una única línea unificada (`POLL_RESP:CC,000,r,g,b,c\n`) que es parseada simultáneamente.
+
 Todo el código está compilado, limpio, persistido y listo para pruebas directas en hardware. 
 
 - *agy*
