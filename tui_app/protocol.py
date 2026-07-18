@@ -100,9 +100,21 @@ def parse_telemetry(line: str) -> dict:
                 "mode": val[2] == '1',
                 "raw": val
             }
-        else:
-            try:
-                return {"type": "BUTTON", "id": int(val)}
-            except ValueError:
-                return {"type": "BUTTON", "raw": val}
+    elif key == "POLL_RESP":
+        parts = val.split(",")
+        beams_str = parts[0]
+        btns_str = parts[1]
+        return {
+            "type": "POLL_RESP",
+            "beams": {1: beams_str[0], 2: beams_str[1]},
+            "buttons": {
+                "up": btns_str[0] == '1',
+                "down": btns_str[1] == '1',
+                "mode": btns_str[2] == '1',
+            },
+            "r": int(parts[2]),
+            "g": int(parts[3]),
+            "b": int(parts[4]),
+            "c": int(parts[5]),
+        }
     return {"type": "UNKNOWN", "raw": line}

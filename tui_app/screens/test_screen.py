@@ -80,9 +80,7 @@ class TestScreen(Screen):
 
     def poll_hardware(self) -> None:
         if self.app.bt.connected:
-            self.app.bt_send("TEST_BEAM")
-            self.app.bt_send("TEST_BUTTON_ECHO")
-            self.app.bt_send("TEST_COLOR")
+            self.app.bt_send("TEST_POLL")
 
     def handle_servo_config(self, servo_id: int, config_parts: list) -> None:
         try:

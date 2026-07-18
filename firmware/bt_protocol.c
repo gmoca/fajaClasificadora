@@ -40,6 +40,10 @@ static void u16_to_str(char *buf, uint16_t val) {
 }
 
 void bt_protocol_process(void) {
+    if (RCSTAbits.OERR) {
+        RCSTAbits.CREN = 0;
+        RCSTAbits.CREN = 1;
+    }
     while (uart_available()) {
         uint8_t c = uart_read_byte();
         
@@ -265,6 +269,54 @@ void bt_protocol_process(void) {
                 } else {
                     uart_send_str("COLOR_ERR:NOT_PRESENT\n");
                 }
+            }
+            else if (strcmp(cmd_buf, "TEST_POLL") == 0) {
+                char buf[64];
+                strcpy(buf, "POLL_RESP:");
+                
+                // Break beams
+                uint8_t s1 = gpio_break_beam_blocked(1);
+                uint8_t s2 = gpio_break_beam_blocked(2);
+                char beams[3];
+                beams[0] = s1 ? 'B' : 'C';
+                beams[1] = s2 ? 'B' : 'C';
+                beams[2] = '\0';
+                strcat(buf, beams);
+                strcat(buf, ",");
+                
+                // Buttons
+                char btns[4];
+                btns[0] = gpio_button_pressed(BTN_UP) ? '1' : '0';
+                btns[1] = gpio_button_pressed(BTN_DOWN) ? '1' : '0';
+                btns[2] = gpio_button_pressed(BTN_MODE) ? '1' : '0';
+                btns[3] = '\0';
+                strcat(buf, btns);
+                strcat(buf, ",");
+                
+                // Color RGBC
+                color_rgbc_t color = {0, 0, 0, 0};
+                if (tcs34725_is_present()) {
+                    tcs34725_get_raw(&color);
+                }
+                
+                char num[8];
+                u16_to_str(num, color.r);
+                strcat(buf, num);
+                strcat(buf, ",");
+                
+                u16_to_str(num, color.g);
+                strcat(buf, num);
+                strcat(buf, ",");
+                
+                u16_to_str(num, color.b);
+                strcat(buf, num);
+                strcat(buf, ",");
+                
+                u16_to_str(num, color.c);
+                strcat(buf, num);
+                strcat(buf, "\n");
+                
+                uart_send_str(buf);
             }
             else {
                 uart_send_str("CMD_ERR:UNKNOWN\n");
