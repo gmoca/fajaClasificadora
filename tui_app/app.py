@@ -155,8 +155,8 @@ class FajaApp(App):
                         with open("tui_log.txt", "a") as f:
                             f.write(f"Error en TestScreen handle_servo_config: {e}\n")
                     
-            # agy: route breakbeams and button status messages to TestScreen if mounted
-            elif t in ("BEAM", "BEAM_MULTI", "BUTTONS", "BUTTON"):
+            # agy: route breakbeams, button status, and color messages to TestScreen if mounted
+            elif t in ("BEAM", "BEAM_MULTI", "BUTTONS", "BUTTON", "COLOR"):
                 ts = self.get_screen_safe("test", TestScreen)
                 if ts:
                     try:
@@ -166,6 +166,8 @@ class FajaApp(App):
                             ts.update_beams_multi(data.get("beams"))
                         elif t == "BUTTONS":
                             ts.update_buttons(data.get("up"), data.get("down"), data.get("mode"))
+                        elif t == "COLOR":
+                            ts.update_color_raw(data.get("r"), data.get("g"), data.get("b"), data.get("c"))
                     except Exception as e:
                         with open("tui_log.txt", "a") as f:
                             f.write(f"Error actualizando test screen: {e}\n")

@@ -20,6 +20,14 @@ class TestScreen(Screen):
                             yield Static("Beam 2: -", id="lbl-beam-2", classes="beam-indicator")
                             
                     with Vertical(classes="test-card"):
+                        yield Static("Sensor de Color TCS34725", classes="card-title")
+                        with Horizontal(classes="test-indicator-row"):
+                            yield Static("R: -", id="lbl-color-r", classes="color-indicator")
+                            yield Static("G: -", id="lbl-color-g", classes="color-indicator")
+                            yield Static("B: -", id="lbl-color-b", classes="color-indicator")
+                            yield Static("C: -", id="lbl-color-c", classes="color-indicator")
+                            
+                    with Vertical(classes="test-card"):
                         yield Static("Botones Físicos (PIC)", classes="card-title")
                         with Horizontal(classes="test-indicator-row"):
                             yield Static("UP", id="lbl-btn-up", classes="btn-indicator")
@@ -70,6 +78,7 @@ class TestScreen(Screen):
         if self.app.bt.connected:
             self.app.bt_send("TEST_BEAM")
             self.app.bt_send("TEST_BUTTON_ECHO")
+            self.app.bt_send("TEST_COLOR")
 
     def handle_servo_config(self, servo_id: int, config_parts: list) -> None:
         try:
@@ -106,6 +115,15 @@ class TestScreen(Screen):
     def update_beams_multi(self, beams: dict) -> None:
         for sid, state in beams.items():
             self.update_beam(sid, state)
+
+    def update_color_raw(self, r: int, g: int, b: int, c: int) -> None:
+        try:
+            self.query_one("#lbl-color-r", Static).update(f"R: {r}")
+            self.query_one("#lbl-color-g", Static).update(f"G: {g}")
+            self.query_one("#lbl-color-b", Static).update(f"B: {b}")
+            self.query_one("#lbl-color-c", Static).update(f"C: {c}")
+        except:
+            pass
 
     def update_buttons(self, up: bool, down: bool, mode: bool) -> None:
         try:

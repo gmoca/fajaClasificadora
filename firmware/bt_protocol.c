@@ -7,6 +7,7 @@
 #include "encoder.h"
 #include "gpio.h"
 #include "system.h"
+#include "tcs34725.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -235,6 +236,35 @@ void bt_protocol_process(void) {
                 buf[7] = '\n';
                 buf[8] = '\0';
                 uart_send_str(buf);
+            }
+            else if (strcmp(cmd_buf, "TEST_COLOR") == 0) {
+                if (tcs34725_is_present()) {
+                    color_rgbc_t color;
+                    tcs34725_get_raw(&color);
+                    char buf[64];
+                    strcpy(buf, "COLOR:");
+                    char num[8];
+                    
+                    u16_to_str(num, color.r);
+                    strcat(buf, num);
+                    strcat(buf, ",");
+                    
+                    u16_to_str(num, color.g);
+                    strcat(buf, num);
+                    strcat(buf, ",");
+                    
+                    u16_to_str(num, color.b);
+                    strcat(buf, num);
+                    strcat(buf, ",");
+                    
+                    u16_to_str(num, color.c);
+                    strcat(buf, num);
+                    strcat(buf, "\n");
+                    
+                    uart_send_str(buf);
+                } else {
+                    uart_send_str("COLOR_ERR:NOT_PRESENT\n");
+                }
             }
             else {
                 uart_send_str("CMD_ERR:UNKNOWN\n");

@@ -416,6 +416,17 @@ Footer {
     text-style: bold;
 }
 
+.color-indicator {
+    border: solid #475569;
+    background: #1e293b;
+    color: #38bdf8;
+    width: 10;
+    height: 3;
+    content-align: center middle;
+    text-align: center;
+    margin-right: 1;
+}
+
 .btn-indicator {
     border: solid #475569;
     background: #1e293b;
