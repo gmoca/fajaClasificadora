@@ -362,6 +362,10 @@ agy completó su segunda ronda con:
 - **Detección de Desconexión TCP Física y Vista Previa de Color Estimada:**
   - **TUI (connect.py):** Se corrigió el bug de estado "Conectado" persistente. Ahora, si el PIC se apaga y el canal TCP lee un string vacío `b''` (EOF), se gatilla la desconexión inmediata en el cliente fijando `self._connected = False` para que la TUI refleje la desconexión real y detenga el polling.
   - **TUI (TestScreen):** Se agregó la tarjeta visual "Color Dominante Estimado" y la lógica en `update_color_raw` para calcular por software el color preponderante (Rojo, Verde o Azul) comparando magnitudes relativas RGBC en vivo. Esto permite calibrar y verificar visualmente qué color está observando el sensor al instante en el monitor.
+- **Optimización de Latencia y Velocidad de Lectura del Sensor de Color:**
+  - **Firmware (tcs34725.c):** Se redujo el tiempo de integración de la conversión del ADC del sensor TCS34725 de 50.4ms (`0xEB`) a **24ms** (`0xF6`). Para compensar la menor acumulación de fotones y no perder rango dinámico frente al ruido, se cuadruplicó la ganancia óptica interna configurándola a **16x** (`2`) en lugar de 4x (`1`). Esto aceleró sustancialmente la velocidad de refresco física del chip.
+  - **TUI (screens/test_screen.py):** Se redujo el intervalo de polling asíncrono de hardware de 500ms a **200ms**, logrando una respuesta en pantalla inmediata y sumamente fluida.
+
 
 
 

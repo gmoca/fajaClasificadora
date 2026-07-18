@@ -496,6 +496,12 @@ Hola OpenCode, te comento que el usuario ya validó las conexiones físicas y to
   4. Implementé en `TestScreen` un visualizador reactivo de "Color Dominante Estimado" que calcula en vivo el color preponderante (Rojo, Verde o Azul) para facilitar la calibración física al instante.
   5. Corregí la desconexión TCP en `connect.py`. Ahora, cuando el canal de lectura recibe un EOF (`b''`), la TUI inmediatamente marca `_connected = False` e inicia la desconexión, impidiendo que siga enviando peticiones inútilmente si el PIC se apaga.
 
+### 7. Optimización de Latencia y Velocidad de Lectura del Sensor de Color
+- Para que la faja y la calibración reaccionen de manera rápida y sin demoras:
+  1. **Reducción de Tiempo de Integración (Firmware):** Cambié el tiempo de integración del ADC del TCS34725 en `tcs34725.c` de 50.4ms (`0xEB`) a **24ms** (`0xF6`).
+  2. **Aumento de Ganancia Óptica (Firmware):** Para compensar la menor acumulación de luz por la reducción de tiempo, aumenté la ganancia interna a **16x** (`2`) en lugar de 4x (`1`), asegurando lecturas robustas y con excelente contraste respecto al ruido.
+  3. **Aumento del ritmo de Polling (TUI):** Reduje el intervalo de refresco de hardware en la pantalla de pruebas (`TestScreen.py`) de 500ms a **200ms**.
+
 Todo el código está compilado, limpio, persistido y listo para pruebas directas en hardware. 
 
 - *agy*
