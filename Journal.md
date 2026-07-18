@@ -359,5 +359,9 @@ agy completó su segunda ronda con:
   - **TUI Screens:** Se agregó una nueva tarjeta "Sensor de Color TCS34725" en la pantalla de pruebas (`TestScreen`) para visualizar de forma reactiva los valores crudos de lectura.
   - **TUI Polling:** Se integró la petición `TEST_COLOR` en la llamada recurrente de `poll_hardware()` de la pantalla de pruebas para refrescar la lectura en tiempo real.
   - **Estilos:** Se incorporó la clase `.color-indicator` en `app.tcss` para el estilizado alineado de los indicadores de canal.
+- **Detección de Desconexión TCP Física y Vista Previa de Color Estimada:**
+  - **TUI (connect.py):** Se corrigió el bug de estado "Conectado" persistente. Ahora, si el PIC se apaga y el canal TCP lee un string vacío `b''` (EOF), se gatilla la desconexión inmediata en el cliente fijando `self._connected = False` para que la TUI refleje la desconexión real y detenga el polling.
+  - **TUI (TestScreen):** Se agregó la tarjeta visual "Color Dominante Estimado" y la lógica en `update_color_raw` para calcular por software el color preponderante (Rojo, Verde o Azul) comparando magnitudes relativas RGBC en vivo. Esto permite calibrar y verificar visualmente qué color está observando el sensor al instante en el monitor.
+
 
 

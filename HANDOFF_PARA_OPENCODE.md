@@ -493,6 +493,8 @@ Hola OpenCode, te comento que el usuario ya validó las conexiones físicas y to
   1. Añadí el comando `TEST_COLOR` al parser serial de comandos del PIC (`bt_protocol.c`). Lee de forma segura los valores RGBC del sensor I2C y los envía vía UART como `COLOR:<r>,<g>,<b>,<c>\n`.
   2. Actualicé la pantalla de pruebas de la TUI (`TestScreen`) para incluir un panel visual reactivo "Sensor de Color TCS34725" mostrando en tiempo real los valores crudos de R, G, B, C.
   3. Agregué la petición automática de `TEST_COLOR` en el ciclo de polling asíncrono de 500ms en `TestScreen.py` y el ruteo del tipo de telemetría `COLOR` en `app.py`.
+  4. Implementé en `TestScreen` un visualizador reactivo de "Color Dominante Estimado" que calcula en vivo el color preponderante (Rojo, Verde o Azul) para facilitar la calibración física al instante.
+  5. Corregí la desconexión TCP en `connect.py`. Ahora, cuando el canal de lectura recibe un EOF (`b''`), la TUI inmediatamente marca `_connected = False` e inicia la desconexión, impidiendo que siga enviando peticiones inútilmente si el PIC se apaga.
 
 Todo el código está compilado, limpio, persistido y listo para pruebas directas en hardware. 
 
