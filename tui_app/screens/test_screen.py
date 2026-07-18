@@ -134,19 +134,26 @@ class TestScreen(Screen):
             widget.remove_class("preview-azul")
             
             # Evitar ruido de oscuridad o fondo (si Clear < 150)
+            # El sensor TCS34725 es naturalmente más sensible al Verde y Azul.
+            # En vacío con ganancia 16x y 24ms leemos una línea base de R: ~330, G: ~530, B: ~490.
+            # Usamos relaciones de proporción relativa respecto a la línea base para clasificar.
             if c < 150:
                 widget.update("[ NINGUNO ]")
             elif r > g and r > b:
+                # Si el rojo supera a los otros canales, es una pieza Roja (en la línea base R es el menor)
                 widget.update("[ ROJO ]")
                 widget.add_class("preview-rojo")
-            elif g > r and g > b:
+            elif g > 2.0 * r and g > 1.2 * b:
+                # Si el verde es más del doble del rojo y supera claramente al azul, es Verde
                 widget.update("[ VERDE ]")
                 widget.add_class("preview-verde")
-            elif b > r and b > g:
+            elif b > 1.8 * r and b > 1.1 * g:
+                # Si el azul supera la proporción base respecto a rojo y verde, es Azul
                 widget.update("[ AZUL ]")
                 widget.add_class("preview-azul")
             else:
-                widget.update("[ INDETERMINADO ]")
+                # Si los valores están en su proporción de línea base normal, mostramos NINGUNO
+                widget.update("[ NINGUNO ]")
         except:
             pass
 
