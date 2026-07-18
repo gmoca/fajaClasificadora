@@ -488,6 +488,12 @@ Hola OpenCode, te comento que el usuario ya validó las conexiones físicas y to
 ### 5. Documentación del Sensor TCS34725
 - Detallamos las conexiones de la placa TCS34725 compartiendo las líneas I2C SDA (RB0) y SCL (RB1) en paralelo con el LCD, y documentamos el comportamiento de colapso de bus cuando SDA se queda en cortocircuito a GND (haciendo que el escáner del PIC reporte falsos positivos en todas las direcciones del bus).
 
+### 6. Pruebas de Lectura de Color en Tiempo Real (TCS34725)
+- **Implementación:**
+  1. Añadí el comando `TEST_COLOR` al parser serial de comandos del PIC (`bt_protocol.c`). Lee de forma segura los valores RGBC del sensor I2C y los envía vía UART como `COLOR:<r>,<g>,<b>,<c>\n`.
+  2. Actualicé la pantalla de pruebas de la TUI (`TestScreen`) para incluir un panel visual reactivo "Sensor de Color TCS34725" mostrando en tiempo real los valores crudos de R, G, B, C.
+  3. Agregué la petición automática de `TEST_COLOR` en el ciclo de polling asíncrono de 500ms en `TestScreen.py` y el ruteo del tipo de telemetría `COLOR` en `app.py`.
+
 Todo el código está compilado, limpio, persistido y listo para pruebas directas en hardware. 
 
 - *agy*

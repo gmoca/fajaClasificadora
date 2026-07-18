@@ -354,4 +354,10 @@ agy completó su segunda ronda con:
   - Se agregaron parámetros de línea de comandos (`--ip`, `--port`, `--serial`) en la inicialización de la TUI. Esto permite abrir la interfaz de forma remota en la PC mediante cable de red (RJ45) o WiFi, estableciendo conexión TCP directamente con la IP de la app "Bluetooth TCP Bridge" en el celular (`python app.py --ip <IP_CELULAR>`).
 - **Instrucciones para Conexión del TCS34725:**
   - Se documentó el conexionado en paralelo I2C para compartir las líneas SDA (RB0) y SCL (RB1) entre la pantalla LCD y el sensor de color, además de proveer guía técnica sobre el colapso del bus cuando alguna línea se cortocircuita a tierra.
+- **Implementación de Pruebas en Tiempo Real del Sensor de Color (TCS34725):**
+  - **Firmware:** Se agregó el comando `TEST_COLOR` en `bt_protocol.c` que realiza la lectura asíncrona de los 4 canales de color (R, G, B, C) mediante `tcs34725_get_raw` y los reporta por la UART con el formato estructurado `COLOR:<r>,<g>,<b>,<c>`.
+  - **TUI Screens:** Se agregó una nueva tarjeta "Sensor de Color TCS34725" en la pantalla de pruebas (`TestScreen`) para visualizar de forma reactiva los valores crudos de lectura.
+  - **TUI Polling:** Se integró la petición `TEST_COLOR` en la llamada recurrente de `poll_hardware()` de la pantalla de pruebas para refrescar la lectura en tiempo real.
+  - **Estilos:** Se incorporó la clase `.color-indicator` en `app.tcss` para el estilizado alineado de los indicadores de canal.
+
 
