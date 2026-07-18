@@ -133,8 +133,8 @@ class TestScreen(Screen):
             widget.remove_class("preview-verde")
             widget.remove_class("preview-azul")
             
-            # Evitar ruido de oscuridad (si Clear < 100)
-            if c < 100:
+            # Evitar ruido de oscuridad o fondo (si Clear < 150)
+            if c < 150:
                 widget.update("[ NINGUNO ]")
             elif r > g and r > b:
                 widget.update("[ ROJO ]")
