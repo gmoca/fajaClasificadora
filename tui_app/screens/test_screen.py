@@ -74,9 +74,9 @@ class TestScreen(Screen):
                 yield Button("Volver al Dashboard", id="btn-back", variant="primary")
 
     def on_mount(self) -> None:
-        # Polling hardware states every 500ms
+        # Polling hardware states every 200ms
         self.pending_test_action = None
-        self.set_interval(0.5, self.poll_hardware)
+        self.set_interval(0.2, self.poll_hardware)
 
     def poll_hardware(self) -> None:
         if self.app.bt.connected:

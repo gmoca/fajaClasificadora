@@ -24,8 +24,9 @@ uint8_t tcs34725_init(void) {
     i2c_write(TCS34725_ADDR, enable, 2);
     __delay_ms(3);
 
-    tcs34725_set_integration_time(0xEB);
-    tcs34725_set_gain(1);
+    /* agy: set integration time to 24ms (0xF6) and gain to 16x (2) for fast/sensitive sensing */
+    tcs34725_set_integration_time(0xF6);
+    tcs34725_set_gain(2);
     is_present = 1;
     return 1;
 }
