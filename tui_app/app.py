@@ -200,13 +200,11 @@ class FajaApp(App):
         
         # Prioridad de puertos según plataforma
         if is_termux:
-            # En celular/Termux, priorizar TCP (puente Serial BT) en puertos comunes
-            tcp_ports = [8080, 9000, 1234]
-            for t_port in tcp_ports:
-                if await self.bt.connect_tcp("127.0.0.1", t_port):
-                    if not silent:
-                        self.notify(f"Conectado vía TCP (127.0.0.1:{t_port})")
-                    return
+            # En celular/Termux, priorizar TCP (puente Serial BT)
+            if await self.bt.connect_tcp(self.tcp_host, self.tcp_port):
+                if not silent:
+                    self.notify(f"Conectado vía TCP ({self.tcp_host}:{self.tcp_port})")
+                return
             
             # Fallback a puertos seriales locales de Android/Linux
             serial_ports = ["/dev/rfcomm0", "/dev/ttyUSB0", "/dev/ttyACM0"]
@@ -216,23 +214,30 @@ class FajaApp(App):
                         self.notify(f"Conectado a {port}")
                     return
         else:
-            # En PC, priorizar puertos COM locales (Windows) o rfcomm (Linux)
-            ports = [
-                "COM3" if is_windows else "/dev/rfcomm0",
-                "COM4" if is_windows else "/dev/ttyUSB0",
-                "COM5" if is_windows else "/dev/ttyACM0",
-                "COM6", "COM7"
-            ]
-            for port in ports:
-                if await self.bt.connect(port):
+            # En PC, priorizar el puerto serial forzado si existe
+            if self.serial_port:
+                if await self.bt.connect(self.serial_port):
                     if not silent:
-                        self.notify(f"Conectado a {port}")
+                        self.notify(f"Conectado a {self.serial_port}")
                     return
+            else:
+                # Si no hay puerto forzado, escanear puertos comunes
+                ports = [
+                    "COM3" if is_windows else "/dev/rfcomm0",
+                    "COM4" if is_windows else "/dev/ttyUSB0",
+                    "COM5" if is_windows else "/dev/ttyACM0",
+                    "COM6", "COM7"
+                ]
+                for port in ports:
+                    if await self.bt.connect(port):
+                        if not silent:
+                            self.notify(f"Conectado a {port}")
+                        return
             
-            # Fallback a TCP en PC
-            if await self.bt.connect_tcp("127.0.0.1", 8080):
+            # Fallback a TCP en PC usando el host/puerto especificados
+            if await self.bt.connect_tcp(self.tcp_host, self.tcp_port):
                 if not silent:
-                    self.notify("Conectado vía TCP (127.0.0.1:8080)")
+                    self.notify(f"Conectado vía TCP ({self.tcp_host}:{self.tcp_port})")
                 return
                 
         if not silent:
@@ -240,5 +245,12 @@ class FajaApp(App):
 
 
 if __name__ == "__main__":
-    app = FajaApp()
+    import argparse
+    parser = argparse.ArgumentParser(description="TUI para la Faja Transportadora PIC18F4550")
+    parser.add_argument("--ip", default="127.0.0.1", help="Dirección IP del servidor TCP (Ej: IP de tu celular)")
+    parser.add_argument("--port", type=int, default=8080, help="Puerto del servidor TCP (Default: 8080)")
+    parser.add_argument("--serial", default=None, help="Puerto serial COM directo (Ej: COM5 o /dev/ttyUSB0)")
+    args = parser.parse_args()
+
+    app = FajaApp(tcp_host=args.ip, tcp_port=args.port, serial_port=args.serial)
     app.run()
