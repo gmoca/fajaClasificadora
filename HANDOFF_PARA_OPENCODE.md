@@ -452,4 +452,45 @@ El sistema queda 100% mejorado estéticamente, libre de fallas de parseo de tele
 
 - *agy*
 
+---
+
+## Actualización de Handoff (agy → OpenCode) — 2026-07-18
+
+Hola OpenCode, te comento que el usuario ya validó las conexiones físicas y todo funciona de forma impecable en su placa **PIC-40-MINI** real. Aquí tienes el reporte de los últimos fixes de integración que apliqué en la faja y el ecosistema de la TUI:
+
+### 1. Inicialización y Control Físico del Motor (PWM)
+- **Error:** Al dar `START`, el motor permanecía estático pero sí giraba si ponían 5V directos al pin `ENA` del L298N.
+- **Solución:** 
+  1. Configuré de forma dura `CCP1CON = 0x0C` (Single PWM output P1A en RC2) y `T2CON = 0x04` (Timer2 ON) en `pwm.c` y `system.c` respectivamente para evitar que el PIC enrutara el PWM a otros pines.
+  2. Ajusté el prescaler del Timer2 a 1:16 (`T2CON = 0x06`), lo cual redujo la frecuencia del PWM de 20kHz a **1.25kHz**. Los 20kHz eran demasiado veloces para los transistores/optoacopladores de la placa física del L298N.
+  3. Corregí un bug crítico de desbordamiento en `pwm_hbridge_set_duty()`. La multiplicación `((uint16_t)duty * 1000)` se desbordaba silenciosamente a 16 bits para valores mayores a 65 (ej. con 180 daba un duty de solo 19%, insuficiente para vencer el torque estático). Al castear a `uint32_t`, el escalado se calcula sin overflow mapeando correctamente al 70.5% real.
+
+### 2. Calibración Física de Servos SG90 (9g)
+- **Error:** Los servomotores se movían pero no representaban los ángulos físicos reales de 0° a 180° configurados desde la TUI.
+- **Solución:** Modifiqué los límites de pulso en `servo.h` para que coincidan con la especificación de los microservos SG90:
+  - `SERVO_PULSE_MIN = 1250` ticks (0.5 ms)
+  - `SERVO_PULSE_MAX = 6250` ticks (2.5 ms)
+  - `SERVO_PULSE_NEUT = 3750` ticks (1.5 ms)
+  Con esto, los servos barren los 180° físicos completos alineados uno a uno con la TUI.
+
+### 3. Bugs de Enrutamiento y Logs en TUI
+- **Error:** Los botones de "Probar Home" y "Probar Deflect" de la pestaña de pruebas (F3) no enviaban la orden final al PIC.
+- **Solución:** `app.py` no estaba redirigiendo el paquete `SERVO_CONFIG` a la pantalla `TestScreen` (solo lo mandaba a `ConfigScreen`). Lo corregí en `app.py` para que enrute a ambas pantallas, permitiendo que la máquina de estados interna de `TestScreen` complete el flujo de pruebas. También agregué el guardado del log de transmisión saliente (`Enviado: ...`) en `tui_log.txt` a través de `connect.py`.
+
+### 4. Parámetros de Red Local (PC sin Bluetooth)
+- **Error:** El usuario necesitaba usar la PC para programar y debugear de forma cómoda, pero su PC no cuenta con adaptador Bluetooth (uno conectado por RJ45 Ethernet y el móvil por WiFi).
+- **Solución:** Agregué soporte de argumentos a la TUI de Python (`--ip`, `--port`, `--serial`). Ahora el usuario puede correr la interfaz gráfica en su PC y conectarse por WiFi local a la IP de su celular (donde ejecuta el puente TCP-Bluetooth) utilizando:
+  ```powershell
+  python app.py --ip <IP_DEL_CELULAR>
+  ```
+  La TUI en la PC funciona a la perfección.
+
+### 5. Documentación del Sensor TCS34725
+- Detallamos las conexiones de la placa TCS34725 compartiendo las líneas I2C SDA (RB0) y SCL (RB1) en paralelo con el LCD, y documentamos el comportamiento de colapso de bus cuando SDA se queda en cortocircuito a GND (haciendo que el escáner del PIC reporte falsos positivos en todas las direcciones del bus).
+
+Todo el código está compilado, limpio, persistido y listo para pruebas directas en hardware. 
+
+- *agy*
+
+
 

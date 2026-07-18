@@ -336,3 +336,22 @@ agy completó su segunda ronda con:
   - Modifiqué `protocol.py` para mapear `SERVO_CFG` a `SERVO_CONFIG` (permitiendo que las lecturas asíncronas de calibración de servos leídas desde la EEPROM por el PIC se auto-rellenen correctamente en la interfaz).
   - Mapeé la respuesta de encoder `ENC:` a `ENCODER_COUNT` para habilitar la lectura de pulsos en el modo de prueba.
 - **Enrutador de Conexión Inteligente:** Modifiqué `action_connect()` en `app.py` para detectar automáticamente si la TUI corre bajo Termux en un celular Android. Si es así, prioriza la conexión TCP local (`127.0.0.1`) barriendo puertos comunes del puente Bluetooth (`8080`, `9000`, `1234`) instantáneamente para evitar esperas molestas por timeouts de puertos serie COM físicos. En PC, mantiene la prioridad de escaneo de puertos COM.
+
+### Actualización (agy) - 2026-07-18 (Resolución de Motores, Servos y Conexión de Red LAN):
+- **Corrección de Registros de Control de PWM (`firmware/pwm.c` y `firmware/system.c`):**
+  - Se configuró explícitamente el registro de control `CCP1CON` a `0x0C` (salida simple P1A en el pin RC2) para impedir que el módulo ECCP del PIC active modos avanzados de puente que desvíen la señal.
+  - Se forzó el encendido limpio del Timer2 fijando el registro `T2CON = 0x04` en `system_init()`.
+- **Alineación de Frecuencia del L298N:**
+  - Se bajó la frecuencia del PWM en `system.c` de 20kHz a **1.25kHz** ajustando el prescaler del Timer2 a 1:16 (`T2CON = 0x06`). Esto resolvió la lentitud de conmutación del puente H físico, permitiendo que la señal llegue correctamente al motor.
+- **Solución de Desbordamiento de Precisión en PWM (`firmware/pwm.c`):**
+  - Se corrigió un bug de desbordamiento en la multiplicación de la velocidad (`duty * 1000`) convirtiendo el operando temporal a `uint32_t`. Esto previno que el registro de comparación sufriera un overflow silencioso de 16 bits que limitaba el ciclo de trabajo a solo 19% de potencia, garantizando la fuerza de torque real requerida por el motor.
+- **Calibración de Servos SG90 (`firmware/servo.h`):**
+  - Se corrigieron los límites de pulso en el software para coincidir con las especificaciones físicas de los microservos SG90 (0.5 ms a 2.5 ms, representados por 1250 y 6250 ticks). Esto habilitó el rango de rotación real completo de 180° (barrido de -90° a +90°).
+- **Enrutamiento del Test de Servos en la TUI (`tui_app/app.py`):**
+  - Se solucionó el bug de enrutamiento donde el mensaje `SERVO_CONFIG` del PIC no era enviado a la pantalla de pruebas. Ahora `TestScreen` recibe y procesa correctamente el estado de calibración, permitiendo que los botones "Probar Home" y "Probar Deflect" funcionen en tiempo real.
+  - Se añadió el registro de comandos salientes (`Enviado: ...`) en `connect.py` hacia `tui_log.txt` para mejorar la depuración del protocolo.
+- **Parámetros CLI para Redes LAN:**
+  - Se agregaron parámetros de línea de comandos (`--ip`, `--port`, `--serial`) en la inicialización de la TUI. Esto permite abrir la interfaz de forma remota en la PC mediante cable de red (RJ45) o WiFi, estableciendo conexión TCP directamente con la IP de la app "Bluetooth TCP Bridge" en el celular (`python app.py --ip <IP_CELULAR>`).
+- **Instrucciones para Conexión del TCS34725:**
+  - Se documentó el conexionado en paralelo I2C para compartir las líneas SDA (RB0) y SCL (RB1) entre la pantalla LCD y el sensor de color, además de proveer guía técnica sobre el colapso del bus cuando alguna línea se cortocircuita a tierra.
+
