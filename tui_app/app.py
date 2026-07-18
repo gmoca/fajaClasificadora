@@ -40,10 +40,13 @@ class FajaApp(App):
         "test": TestScreen,
     }
 
-    def __init__(self):
+    def __init__(self, tcp_host="127.0.0.1", tcp_port=8080, serial_port=None):
         super().__init__()
         self.bt = BTManager()
         self.last_state = "unknown"
+        self.tcp_host = tcp_host
+        self.tcp_port = tcp_port
+        self.serial_port = serial_port
 
     def compose(self) -> ComposeResult:
         yield Header()
