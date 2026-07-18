@@ -47,6 +47,7 @@ class FajaApp(App):
         self.tcp_host = tcp_host
         self.tcp_port = tcp_port
         self.serial_port = serial_port
+        self.last_read_time = 0
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -82,9 +83,25 @@ class FajaApp(App):
 
     async def poll_bluetooth(self):
         if not self.bt.connected:
+            self.last_read_time = 0
             return
+            
+        import time
+        if self.last_read_time == 0:
+            self.last_read_time = time.time()
+            
+        # Heartbeat safety check: if we haven't received telemetry or responses for > 2.5 seconds,
+        # it means the PIC is turned off or the Bluetooth bridge has lost connection to the PIC.
+        if time.time() - self.last_read_time > 2.5:
+            with open("tui_log.txt", "a") as f:
+                f.write("Heartbeat timeout (>2.5s sin recibir datos). Forzando desconexión.\n")
+            await self.bt.disconnect()
+            self.last_read_time = 0
+            return
+
         line = await self.bt.read_line()
         if line:
+            self.last_read_time = time.time()
             data = parse_telemetry(line)
             self.update_dashboard(data)
 
