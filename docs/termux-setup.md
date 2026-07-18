@@ -4,7 +4,7 @@
 
 - Android 8+ con Bluetooth (para celular) o PC (Windows/Linux/macOS)
 - Termux **desde F-Droid** (NO Google Play — versión desactualizada)
-- HC-05 configurado a 115200 baud (ver [hc05-setup.md](file:///c:/Users/gusta/source/repos/gmoca/pryMicroFaja.X/docs/hc05-setup.md))
+- HC-05 configurado a 9600 baud por defecto (o la velocidad configurada en `config.h`, ver [hc05-setup.md](file:///c:/Users/gusta/source/repos/gmoca/pryMicroFaja.X/docs/hc05-setup.md))
 
 ---
 
@@ -130,7 +130,20 @@ asyncio.run(test())
 
 Debería responder: `STATUS_RESP:...`
 
-### Método C: USB-OTG + cable USB-TTL (alternativa sin Bluetooth)
+### Método C: Conexión Remota por Red Local (LAN) - PC sin Bluetooth
+
+Si tu PC no tiene antena Bluetooth, pero tu celular y la PC están conectados a la **misma red local** (por ejemplo, la PC por cable Ethernet RJ45 y el celular por WiFi), puedes usar el celular como antena repetidora:
+
+1.  Asegúrate de que ambos dispositivos están conectados al mismo módem/router.
+2.  En la app **Bluetooth TCP Bridge** de tu celular, ve a la sección de red y fíjate qué dirección IP local tiene asignada (ejemplo: `192.168.1.15`).
+3.  Inicia el **TCP Server** en el puerto `8080` de tu celular y conéctate al módulo HC-05 por Bluetooth.
+4.  En la PC, abre la terminal e inicia la TUI especificando la IP de tu celular:
+    ```powershell
+    python app.py --ip DIRECCION_IP_DEL_CELULAR
+    ```
+    *(Por ejemplo: `python app.py --ip 192.168.1.15`)*
+
+### Método D: USB-OTG + cable USB-TTL (alternativa sin Bluetooth en Termux)
 
 Si no usas Bluetooth, puedes conectar un cable USB-TTL directamente al PIC:
 
@@ -153,6 +166,18 @@ python app.py
 
 ---
 
+## Parámetros de ejecución avanzados (CLI)
+
+Puedes configurar el comportamiento de conexión de la TUI al arrancar desde la terminal usando los siguientes argumentos:
+
+*   `--ip <IP>`: Dirección IP del servidor TCP del celular (Por defecto `127.0.0.1`).
+*   `--port <PORT>`: Puerto de conexión TCP (Por defecto `8080`).
+*   `--serial <PORT_COM>`: Forzar conexión directa a un puerto COM serie físico (Ej: `COM5` en Windows o `/dev/ttyUSB0` en Linux).
+
+*Ejemplo de uso:* `python app.py --ip 192.168.3.4 --port 8080`
+
+---
+
 ## Solución de problemas
 
 | Problema | Causa | Solución |
@@ -160,6 +185,6 @@ python app.py
 | `ModuleNotFoundError: serial` | Faltan dependencias | Ejecutar con `start.sh` / `start.bat` o correr `pip install -e .` en el entorno virtual activo. |
 | `Connection refused` al conectar TCP | Serial BT Terminal no inició TCP Server | Abrir app, menú → TCP Server → Start |
 | `No device` en TCP | Puerto incorrecto | Verificar puerto en la app (debe ser 8080, 9000 o 1234) |
-| Datos corruptos o caracteres raros | Baud rate incorrecto | HC-05 debe estar en 115200 (ver `docs/hc05-setup.md`) |
+| Datos corruptos o caracteres raros | Baud rate incorrecto | El baud rate del HC-05 debe coincidir con `config.h` del firmware (por defecto 9600). |
 | `git clone` falla | Sin git | `pkg install git` |
 | La TUI no responde | HC-05 no conectado | Verificar LED del HC-05 (debe parpadear rápido) |
