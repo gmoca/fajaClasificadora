@@ -275,8 +275,8 @@ void bt_protocol_process(void) {
                 strcpy(buf, "POLL_RESP:");
                 
                 // Break beams
-                uint8_t s1 = gpio_break_beam_blocked(1);
-                uint8_t s2 = gpio_break_beam_blocked(2);
+                uint8_t s1 = gpio_breakbeam_read(1);
+                uint8_t s2 = gpio_breakbeam_read(2);
                 char beams[3];
                 beams[0] = s1 ? 'B' : 'C';
                 beams[1] = s2 ? 'B' : 'C';
