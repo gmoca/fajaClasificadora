@@ -47,6 +47,8 @@ static uint32_t last_detect_tick = 0;
 static uint32_t test_motor_watchdog = 0;
 static uint8_t sorting_servo_id = 1;
 static uint8_t sorting_phase = 0;
+static uint32_t last_detect_pulses = 0;
+static uint8_t first_detection = 1;
 
 void state_machine_set_mode(uint8_t mode) { auto_mode = mode; }
 void state_machine_set_spacing(uint16_t space) { min_spacing_pulses = space; }
@@ -94,6 +96,7 @@ void state_machine_estop(void) {
 void state_machine_start(void) {
     if (state != ST_IDLE) return;
     state = ST_RUNNING;
+    first_detection = 1;
     pwm_hbridge_set_duty(motor_speed ? motor_speed : 180);
     gpio_hbridge_dir(HB_FWD);
     uart_send_str("STATE:run\n");
@@ -423,31 +426,52 @@ void state_machine_run(void) {
                 static uint32_t last_color_check = 0;
                 if (now - last_color_check >= 100) {
                     last_color_check = now;
-                    if (tcs34725_is_present()) {
-                        color_rgbc_t color;
-                        tcs34725_get_raw(&color);
-                        int8_t idx = color_match_index(&color);
-                        if (idx >= 0) {
-                            color_config_t colors[3];
-                            uint8_t num_colors = calibration_load_all(colors, 3);
-                            uint8_t sid = (idx < num_colors) ? colors[idx].servo_id : 0;
-                            
-                            char buf[32];
-                            strcpy(buf, "DETECT:");
-                            char idx_str[4];
-                            u16_to_str(idx_str, (uint16_t)idx);
-                            strcat(buf, idx_str);
-                            strcat(buf, "\n");
-                            uart_send_str(buf);
-                            
-                            lcd_set_cursor(0, 1);
-                            lcd_print("Detectado: ");
-                            lcd_print(idx_str);
-                            
-                            if (sid == 1 || sid == 2) {
-                                state = ST_SORTING;
-                                sorting_phase = 0;
-                                sorting_servo_id = sid;
+                    uint32_t current_pulses = encoder_get_pulses();
+                    uint16_t speed = encoder_get_speed_mm_s();
+                    uint8_t allowed = 0;
+                    
+                    if (speed == 0) {
+                        // fallback: time-based debounce of 2 seconds
+                        if (first_detection || (now - last_detect_tick >= 2000)) {
+                            allowed = 1;
+                        }
+                    } else {
+                        if (first_detection || (current_pulses - last_detect_pulses >= min_spacing_pulses)) {
+                            allowed = 1;
+                        }
+                    }
+                    
+                    if (allowed) {
+                        if (tcs34725_is_present()) {
+                            color_rgbc_t color;
+                            tcs34725_get_raw(&color);
+                            int8_t idx = color_match_index(&color);
+                            if (idx >= 0) {
+                                color_config_t colors[3];
+                                uint8_t num_colors = calibration_load_all(colors, 3);
+                                uint8_t sid = (idx < num_colors) ? colors[idx].servo_id : 0;
+                                
+                                first_detection = 0;
+                                last_detect_pulses = current_pulses;
+                                last_detect_tick = now;
+                                
+                                char buf[32];
+                                strcpy(buf, "DETECT:");
+                                char idx_str[4];
+                                u16_to_str(idx_str, (uint16_t)idx);
+                                strcat(buf, idx_str);
+                                strcat(buf, "\n");
+                                uart_send_str(buf);
+                                
+                                lcd_set_cursor(0, 1);
+                                lcd_print("Detectado: ");
+                                lcd_print(idx_str);
+                                
+                                if (sid == 1 || sid == 2) {
+                                    state = ST_SORTING;
+                                    sorting_phase = 0;
+                                    sorting_servo_id = sid;
+                                }
                             }
                         }
                     }
