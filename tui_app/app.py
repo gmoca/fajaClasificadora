@@ -145,6 +145,15 @@ class FajaApp(App):
                     dash.speed = int(parts["speed"])
                 if "pulses" in parts:
                     dash.pulses = int(parts["pulses"])
+                if "pwm" in parts:
+                    dash.pwm = int(parts["pwm"])
+                    cfg_scr = self.get_screen_safe("config", ConfigScreen)
+                    if cfg_scr:
+                        try:
+                            from textual.widgets import Input
+                            cfg_scr.query_one("#inp-speed", Input).placeholder = f"Ej: {parts['pwm']}"
+                        except:
+                            pass
             
             elif t == "STATE":
                 dash.state = data.get("value", "unknown").upper()

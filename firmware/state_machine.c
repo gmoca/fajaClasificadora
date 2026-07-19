@@ -664,6 +664,10 @@ void state_machine_run(void) {
         uart_send_str(" PULSES:");
         u32_to_str(num_buf, encoder_get_pulses());
         uart_send_str(num_buf);
+
+        uart_send_str(" PWM:");
+        u16_to_str(num_buf, motor_speed);
+        uart_send_str(num_buf);
         uart_send_str("\n");
     }
 

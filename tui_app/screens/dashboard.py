@@ -12,6 +12,7 @@ class DashboardScreen(Screen):
     red_count = reactive(0)
     green_count = reactive(0)
     blue_count = reactive(0)
+    pwm = reactive(180)
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="dash-main"):
@@ -43,7 +44,7 @@ class DashboardScreen(Screen):
             yield Button("Modo TEST", id="btn-test")
             
         with Horizontal(id="dash-speed-control"):
-            yield Static("Ajustar PWM Motor (0-255):", classes="panel-title")
+            yield Static("Ajustar PWM Motor (0-255):", id="lbl-pwm-title", classes="panel-title")
             from textual.widgets import Input
             yield Input(placeholder="180", id="input-speed", restrict=r"^\d{0,3}$")
 
@@ -83,6 +84,13 @@ class DashboardScreen(Screen):
     def watch_pulses(self, new_pulses: int) -> None:
         try:
             self.query_one("#lbl-pulses", Static).update(f"{new_pulses}")
+        except:
+            pass
+
+    def watch_pwm(self, new_pwm: int) -> None:
+        try:
+            self.query_one("#lbl-pwm-title", Static).update(f"Ajustar PWM Motor (0-255) [Actual: {new_pwm}]:")
+            self.query_one("#input-speed", Input).placeholder = str(new_pwm)
         except:
             pass
             
