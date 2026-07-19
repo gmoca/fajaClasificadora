@@ -38,6 +38,9 @@ class ConfigScreen(Screen):
                         with Horizontal(classes="config-row"):
                             yield Label("Dwell Time (ms):")
                             yield Input(placeholder="500", id="inp-s1-dwell")
+                        with Horizontal(classes="config-row"):
+                            yield Label("Distance (mm):")
+                            yield Input(placeholder="200", id="inp-s1-dist")
                             yield Button("Guardar", id="btn-save-s1", variant="success")
                             
                     with Vertical(classes="config-card"):
@@ -53,6 +56,9 @@ class ConfigScreen(Screen):
                         with Horizontal(classes="config-row"):
                             yield Label("Dwell Time (ms):")
                             yield Input(placeholder="500", id="inp-s2-dwell")
+                        with Horizontal(classes="config-row"):
+                            yield Label("Distance (mm):")
+                            yield Input(placeholder="250", id="inp-s2-dist")
                             yield Button("Guardar", id="btn-save-s2", variant="success")
                 
                 # Columna Derecha: Sensor de Color y Calibración
@@ -95,16 +101,19 @@ class ConfigScreen(Screen):
             home_val = config_parts[1]
             defl_val = config_parts[2]
             dwell_val = config_parts[3]
+            dist_val = config_parts[4] if len(config_parts) >= 5 else (200 if servo_id == 1 else 250)
             
             if servo_id == 1:
                 self.query_one("#inp-s1-home", Input).value = str(home_val)
                 self.query_one("#inp-s1-defl", Input).value = str(defl_val)
                 self.query_one("#inp-s1-dwell", Input).value = str(dwell_val)
+                self.query_one("#inp-s1-dist", Input).value = str(dist_val)
                 self.app.notify("Configuración de Servo 1 cargada exitosamente")
             elif servo_id == 2:
                 self.query_one("#inp-s2-home", Input).value = str(home_val)
                 self.query_one("#inp-s2-defl", Input).value = str(defl_val)
                 self.query_one("#inp-s2-dwell", Input).value = str(dwell_val)
+                self.query_one("#inp-s2-dist", Input).value = str(dist_val)
                 self.app.notify("Configuración de Servo 2 cargada exitosamente")
         except Exception as e:
             self.app.notify(f"Error cargando servo {servo_id}: {e}", severity="error")
@@ -181,6 +190,7 @@ class ConfigScreen(Screen):
                 home = int(self.query_one("#inp-s1-home", Input).value)
                 defl = int(self.query_one("#inp-s1-defl", Input).value)
                 dwell = int(self.query_one("#inp-s1-dwell", Input).value)
+                dist = int(self.query_one("#inp-s1-dist", Input).value)
                 
                 async def run_save():
                     self.app.bt_send(f"SERVO 1 {home}")
@@ -192,17 +202,20 @@ class ConfigScreen(Screen):
                     self.app.bt_send("SERVO_SAVE_DEFLECT 1")
                     await asyncio.sleep(0.2)
                     self.app.bt_send(f"SET_DWELL 1 {dwell}")
+                    await asyncio.sleep(0.2)
+                    self.app.bt_send(f"SET_DIST 1 {dist}")
                     self.app.notify("Parámetros de Servo 1 guardados exitosamente")
                 
                 asyncio.create_task(run_save())
             except ValueError:
-                self.app.notify("Error: Rellene Home, Defl y Dwell para Servo 1", severity="error")
+                self.app.notify("Error: Rellene Home, Defl, Dwell y Dist para Servo 1", severity="error")
 
         elif button_id == "btn-save-s2":
             try:
                 home = int(self.query_one("#inp-s2-home", Input).value)
                 defl = int(self.query_one("#inp-s2-defl", Input).value)
                 dwell = int(self.query_one("#inp-s2-dwell", Input).value)
+                dist = int(self.query_one("#inp-s2-dist", Input).value)
                 
                 async def run_save():
                     self.app.bt_send(f"SERVO 2 {home}")
@@ -214,11 +227,13 @@ class ConfigScreen(Screen):
                     self.app.bt_send("SERVO_SAVE_DEFLECT 2")
                     await asyncio.sleep(0.2)
                     self.app.bt_send(f"SET_DWELL 2 {dwell}")
+                    await asyncio.sleep(0.2)
+                    self.app.bt_send(f"SET_DIST 2 {dist}")
                     self.app.notify("Parámetros de Servo 2 guardados exitosamente")
                 
                 asyncio.create_task(run_save())
             except ValueError:
-                self.app.notify("Error: Rellene Home, Defl y Dwell para Servo 2", severity="error")
+                self.app.notify("Error: Rellene Home, Defl, Dwell y Dist para Servo 2", severity="error")
 
         elif button_id == "btn-save-color":
             try:

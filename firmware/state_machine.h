@@ -26,6 +26,7 @@ void state_machine_set_mode(uint8_t mode);
 void state_machine_set_spacing(uint16_t space);
 void state_machine_set_dwell(uint16_t dwell);
 void state_machine_set_speed(uint8_t speed);
+void state_machine_set_dist(uint8_t sid, uint16_t dist);
 
 state_t state_machine_get(void);
 

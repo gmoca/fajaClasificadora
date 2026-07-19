@@ -52,6 +52,8 @@ void calibration_init(void) {
         calibration_write_word(EEPROM_ADDR_SERVO2_DWELL, 500);
         calibration_write_word(EEPROM_ADDR_ENC_PPR, 20);
         eeprom_write_byte(EEPROM_ADDR_NUM_CLR, 0);
+        calibration_write_word(EEPROM_ADDR_SERVO1_DIST, 200);
+        calibration_write_word(EEPROM_ADDR_SERVO2_DIST, 250);
     }
 }
 
@@ -114,6 +116,11 @@ void calibration_save_servo_dwell(uint8_t sid, uint16_t val) {
     calibration_write_word(addr, val);
 }
 
+void calibration_save_servo_dist(uint8_t sid, uint16_t val) {
+    uint8_t addr = (sid == 1) ? EEPROM_ADDR_SERVO1_DIST : EEPROM_ADDR_SERVO2_DIST;
+    calibration_write_word(addr, val);
+}
+
 void calibration_save_ppr(uint16_t val) {
     calibration_write_word(EEPROM_ADDR_ENC_PPR, val);
 }
@@ -134,10 +141,12 @@ void calibration_send_servo_config(uint8_t sid) {
     uint8_t addr_home = (sid == 1) ? EEPROM_ADDR_SERVO1_HOME : EEPROM_ADDR_SERVO2_HOME;
     uint8_t addr_defl = (sid == 1) ? EEPROM_ADDR_SERVO1_DEFL : EEPROM_ADDR_SERVO2_DEFL;
     uint8_t addr_dwell = (sid == 1) ? EEPROM_ADDR_SERVO1_DWELL : EEPROM_ADDR_SERVO2_DWELL;
+    uint8_t addr_dist = (sid == 1) ? EEPROM_ADDR_SERVO1_DIST : EEPROM_ADDR_SERVO2_DIST;
 
     uint16_t home = calibration_read_word(addr_home);
     uint16_t defl = calibration_read_word(addr_defl);
     uint16_t dwell = calibration_read_word(addr_dwell);
+    uint16_t dist = calibration_read_word(addr_dist);
 
     char buf[64];
     strcpy(buf, "SERVO_CFG:");
@@ -152,6 +161,9 @@ void calibration_send_servo_config(uint8_t sid) {
     strcat(buf, num);
     strcat(buf, ",");
     u16_to_str(num, dwell);
+    strcat(buf, num);
+    strcat(buf, ",");
+    u16_to_str(num, dist);
     strcat(buf, num);
     strcat(buf, "\n");
 

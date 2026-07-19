@@ -184,6 +184,17 @@ void bt_protocol_process(void) {
                     state_machine_set_dwell(dwell);
                 }
             }
+            else if (strncmp(cmd_buf, "SET_DIST ", 9) == 0) {
+                char *sp1 = strchr(cmd_buf + 9, ' ');
+                if (sp1) {
+                    *sp1 = '\0';
+                    uint8_t sid = atoi(cmd_buf + 9);
+                    uint16_t dist = atoi(sp1 + 1);
+                    calibration_save_servo_dist(sid, dist);
+                    state_machine_set_dist(sid, dist);
+                    uart_send_str("CMD_OK:SET_DIST\n");
+                }
+            }
             else if (strcmp(cmd_buf, "TEST_ENCODER_RESET") == 0) {
                 encoder_reset();
             }

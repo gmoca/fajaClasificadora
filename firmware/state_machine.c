@@ -39,11 +39,14 @@ static void u32_to_str(char *buf, uint32_t val) {
 static state_t state = ST_IDLE;
 static uint8_t motor_speed = 0;
 static uint8_t auto_mode = 1;
-static uint16_t distance_to_servo_mm = 200;  // mm from sensor to servo
+static uint16_t distance_s1_mm = 200;  // mm from sensor to servo 1
+static uint16_t distance_s2_mm = 250;  // mm from sensor to servo 2
 static uint16_t min_spacing_pulses = 100;
 static uint16_t dwell_time_ms = 500;
 static uint32_t last_detect_tick = 0;
 static uint32_t test_motor_watchdog = 0;
+static uint8_t sorting_servo_id = 1;
+static uint8_t sorting_phase = 0;
 
 void state_machine_set_mode(uint8_t mode) { auto_mode = mode; }
 void state_machine_set_spacing(uint16_t space) { min_spacing_pulses = space; }
@@ -54,10 +57,18 @@ void state_machine_set_speed(uint8_t speed) {
         pwm_hbridge_set_duty(motor_speed ? motor_speed : 180);
     }
 }
+void state_machine_set_dist(uint8_t sid, uint16_t dist) {
+    if (sid == 1) distance_s1_mm = dist;
+    else if (sid == 2) distance_s2_mm = dist;
+}
 
 void state_machine_init(void) {
     state = ST_IDLE;
     anti_jam_init();
+    distance_s1_mm = calibration_read_word(EEPROM_ADDR_SERVO1_DIST);
+    if (distance_s1_mm == 0 || distance_s1_mm > 2000) distance_s1_mm = 200;
+    distance_s2_mm = calibration_read_word(EEPROM_ADDR_SERVO2_DIST);
+    if (distance_s2_mm == 0 || distance_s2_mm > 2000) distance_s2_mm = 250;
     lcd_clear();
     lcd_print("Sistema OK");
     lcd_set_cursor(0, 1);
@@ -93,9 +104,11 @@ void state_machine_start(void) {
 static uint16_t menu_s1_home = 90;
 static uint16_t menu_s1_defl = 0;
 static uint16_t menu_s1_dwell = 500;
+static uint16_t menu_s1_dist = 200;
 static uint16_t menu_s2_home = 90;
 static uint16_t menu_s2_defl = 0;
 static uint16_t menu_s2_dwell = 500;
+static uint16_t menu_s2_dist = 250;
 static uint16_t menu_ppr = 20;
 
 static uint8_t menu_index = 0;
@@ -114,6 +127,8 @@ static void load_menu_values(void) {
     if (menu_s1_defl > 180) menu_s1_defl = 0;
     menu_s1_dwell = calibration_read_word(EEPROM_ADDR_SERVO1_DWELL);
     if (menu_s1_dwell > 5000) menu_s1_dwell = 500;
+    menu_s1_dist = calibration_read_word(EEPROM_ADDR_SERVO1_DIST);
+    if (menu_s1_dist == 0 || menu_s1_dist > 2000) menu_s1_dist = 200;
     
     menu_s2_home = calibration_read_word(EEPROM_ADDR_SERVO2_HOME);
     if (menu_s2_home > 180) menu_s2_home = 90;
@@ -121,6 +136,8 @@ static void load_menu_values(void) {
     if (menu_s2_defl > 180) menu_s2_defl = 0;
     menu_s2_dwell = calibration_read_word(EEPROM_ADDR_SERVO2_DWELL);
     if (menu_s2_dwell > 5000) menu_s2_dwell = 500;
+    menu_s2_dist = calibration_read_word(EEPROM_ADDR_SERVO2_DIST);
+    if (menu_s2_dist == 0 || menu_s2_dist > 2000) menu_s2_dist = 250;
     
     menu_ppr = calibration_read_word(EEPROM_ADDR_ENC_PPR);
     if (menu_ppr == 0 || menu_ppr > 1000) menu_ppr = 20;
@@ -143,24 +160,32 @@ static void adjust_menu_value(int8_t dir) {
             if (dir < 0 && menu_s1_dwell > 50) menu_s1_dwell -= 50;
             break;
         case 3:
+            if (dir > 0 && menu_s1_dist < 2000) menu_s1_dist += 5;
+            if (dir < 0 && menu_s1_dist > 5) menu_s1_dist -= 5;
+            break;
+        case 4:
             if (dir > 0 && menu_s2_home < 180) menu_s2_home++;
             if (dir < 0 && menu_s2_home > 0) menu_s2_home--;
             servo_set_angle(2, menu_s2_home);
             break;
-        case 4:
+        case 5:
             if (dir > 0 && menu_s2_defl < 180) menu_s2_defl++;
             if (dir < 0 && menu_s2_defl > 0) menu_s2_defl--;
             servo_set_angle(2, menu_s2_defl);
             break;
-        case 5:
+        case 6:
             if (dir > 0 && menu_s2_dwell < 5000) menu_s2_dwell += 50;
             if (dir < 0 && menu_s2_dwell > 50) menu_s2_dwell -= 50;
             break;
-        case 6:
+        case 7:
+            if (dir > 0 && menu_s2_dist < 2000) menu_s2_dist += 5;
+            if (dir < 0 && menu_s2_dist > 5) menu_s2_dist -= 5;
+            break;
+        case 8:
             if (dir > 0 && menu_ppr < 1000) menu_ppr++;
             if (dir < 0 && menu_ppr > 1) menu_ppr--;
             break;
-        case 7:
+        case 9:
             // Exit option, no value to adjust
             break;
     }
@@ -171,11 +196,13 @@ static void save_current_menu_value(void) {
         case 0: calibration_save_servo_home(1, menu_s1_home); break;
         case 1: calibration_save_servo_deflect(1, menu_s1_defl); break;
         case 2: calibration_save_servo_dwell(1, menu_s1_dwell); break;
-        case 3: calibration_save_servo_home(2, menu_s2_home); break;
-        case 4: calibration_save_servo_deflect(2, menu_s2_defl); break;
-        case 5: calibration_save_servo_dwell(2, menu_s2_dwell); break;
-        case 6: calibration_save_ppr(menu_ppr); break;
-        case 7: // Exit option, no value to save
+        case 3: calibration_save_servo_dist(1, menu_s1_dist); distance_s1_mm = menu_s1_dist; break;
+        case 4: calibration_save_servo_home(2, menu_s2_home); break;
+        case 5: calibration_save_servo_deflect(2, menu_s2_defl); break;
+        case 6: calibration_save_servo_dwell(2, menu_s2_dwell); break;
+        case 7: calibration_save_servo_dist(2, menu_s2_dist); distance_s2_mm = menu_s2_dist; break;
+        case 8: calibration_save_ppr(menu_ppr); break;
+        case 9: // Exit option, no value to save
             break;
     }
 }
@@ -200,22 +227,30 @@ static void display_menu(void) {
             u16_to_str(val_str, menu_s1_dwell);
             break;
         case 3:
+            lcd_print("S1 Dist: ");
+            u16_to_str(val_str, menu_s1_dist);
+            break;
+        case 4:
             lcd_print("S2 Home: ");
             u16_to_str(val_str, menu_s2_home);
             break;
-        case 4:
+        case 5:
             lcd_print("S2 Defl: ");
             u16_to_str(val_str, menu_s2_defl);
             break;
-        case 5:
+        case 6:
             lcd_print("S2 Dwell: ");
             u16_to_str(val_str, menu_s2_dwell);
             break;
-        case 6:
+        case 7:
+            lcd_print("S2 Dist: ");
+            u16_to_str(val_str, menu_s2_dist);
+            break;
+        case 8:
             lcd_print("Enc PPR: ");
             u16_to_str(val_str, menu_ppr);
             break;
-        case 7:
+        case 9:
             lcd_print("Mant. p/ ");
             strcpy(val_str, "SALIR");
             break;
@@ -394,6 +429,8 @@ void state_machine_run(void) {
                         int8_t idx = color_match_index(&color);
                         if (idx >= 0) {
                             state = ST_SORTING;
+                            sorting_phase = 0;
+                            sorting_servo_id = (idx == 2) ? 2 : 1;
                             char buf[32];
                             strcpy(buf, "DETECT:");
                             char idx_str[4];
@@ -422,7 +459,6 @@ void state_machine_run(void) {
 
         case ST_SORTING:
             {
-                static uint8_t sorting_phase = 0;
                 static uint32_t sorting_timeout = 0;
                 
                 if (sorting_phase == 0) {
@@ -431,7 +467,8 @@ void state_machine_run(void) {
                         // fallback speed if encoder is disconnected or not registering (100 mm/s)
                         speed = 100;
                     }
-                    uint32_t transit_ms = (uint32_t)distance_to_servo_mm * 1000 / speed;
+                    uint16_t dist = (sorting_servo_id == 1) ? distance_s1_mm : distance_s2_mm;
+                    uint32_t transit_ms = (uint32_t)dist * 1000 / speed;
                     sorting_timeout = system_ticks + transit_ms;
                     sorting_phase = 1;
                 }
@@ -439,9 +476,13 @@ void state_machine_run(void) {
                 if (sorting_phase == 1) {
                     if (system_ticks >= sorting_timeout) {
                         if (!anti_jam_is_jammed() && state != ST_ERROR) {
-                            uint16_t defl = calibration_read_word(EEPROM_ADDR_SERVO1_DEFL);
-                            servo_set_angle(1, defl);
-                            sorting_timeout = system_ticks + dwell_time_ms;
+                            uint8_t addr_defl = (sorting_servo_id == 1) ? EEPROM_ADDR_SERVO1_DEFL : EEPROM_ADDR_SERVO2_DEFL;
+                            uint8_t addr_dwell = (sorting_servo_id == 1) ? EEPROM_ADDR_SERVO1_DWELL : EEPROM_ADDR_SERVO2_DWELL;
+                            uint16_t defl = calibration_read_word(addr_defl);
+                            uint16_t dwell = calibration_read_word(addr_dwell);
+                            
+                            servo_set_angle(sorting_servo_id, defl);
+                            sorting_timeout = system_ticks + dwell;
                             sorting_phase = 2;
                         } else {
                             state = ST_RUNNING;
@@ -452,8 +493,9 @@ void state_machine_run(void) {
                 
                 if (sorting_phase == 2) {
                     if (system_ticks >= sorting_timeout) {
-                        uint16_t home = calibration_read_word(EEPROM_ADDR_SERVO1_HOME);
-                        servo_set_angle(1, home);
+                        uint8_t addr_home = (sorting_servo_id == 1) ? EEPROM_ADDR_SERVO1_HOME : EEPROM_ADDR_SERVO2_HOME;
+                        uint16_t home = calibration_read_word(addr_home);
+                        servo_set_angle(sorting_servo_id, home);
                         state = ST_RUNNING;
                         sorting_phase = 0;
                         uart_send_str("DONE\n");
@@ -493,7 +535,7 @@ void state_machine_run(void) {
                         mode_was_pressed = 1;
                         mode_long_pressed = 0;
                     } else if (!mode_long_pressed && (now - mode_press_start > 3000)) {
-                        if (menu_index == 7) {
+                        if (menu_index == 9) {
                             state = ST_IDLE;
                             menu_active = 0;
                             lcd_clear();
@@ -513,7 +555,7 @@ void state_machine_run(void) {
                 } else {
                     if (mode_was_pressed) {
                         if (!mode_long_pressed && (now - mode_press_start > 100)) {
-                            menu_index = (menu_index + 1) % 8;
+                            menu_index = (menu_index + 1) % 10;
                             lcd_needs_update = 1;
                         }
                         mode_was_pressed = 0;
