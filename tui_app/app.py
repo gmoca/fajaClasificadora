@@ -55,8 +55,8 @@ class FajaApp(App):
 
     async def on_mount(self):
         self.push_screen("dashboard")
-        self.set_interval(0.5, self.poll_bluetooth)
         self.set_interval(3.0, self.auto_reconnect)
+        asyncio.create_task(self.receive_loop())
 
     # agy: Action method to cleanly switch between screens preventing stack leakage
     def switch_to_screen(self, screen_name: str):
@@ -81,29 +81,36 @@ class FajaApp(App):
         if not self.bt.connected:
             await self.action_connect(silent=True)
 
-    async def poll_bluetooth(self):
-        if not self.bt.connected:
-            self.last_read_time = 0
-            return
-            
+    async def receive_loop(self):
         import time
-        if self.last_read_time == 0:
-            self.last_read_time = time.time()
-            
-        # Heartbeat safety check: if we haven't received telemetry or responses for > 2.5 seconds,
-        # it means the PIC is turned off or the Bluetooth bridge has lost connection to the PIC.
-        if time.time() - self.last_read_time > 2.5:
-            with open("tui_log.txt", "a") as f:
-                f.write("Heartbeat timeout (>2.5s sin recibir datos). Forzando desconexión.\n")
-            await self.bt.disconnect()
-            self.last_read_time = 0
-            return
+        while True:
+            try:
+                if not self.bt.connected:
+                    self.last_read_time = 0
+                    await asyncio.sleep(0.1)
+                    continue
+                    
+                if self.last_read_time == 0:
+                    self.last_read_time = time.time()
+                    
+                # Heartbeat safety check: if we haven't received telemetry or responses for > 2.5 seconds,
+                # it means the PIC is turned off or the Bluetooth bridge has lost connection to the PIC.
+                if time.time() - self.last_read_time > 2.5:
+                    with open("tui_log.txt", "a") as f:
+                        f.write("Heartbeat timeout (>2.5s sin recibir datos). Forzando desconexión.\n")
+                    await self.bt.disconnect()
+                    self.last_read_time = 0
+                    continue
 
-        line = await self.bt.read_line()
-        if line:
-            self.last_read_time = time.time()
-            data = parse_telemetry(line)
-            self.update_dashboard(data)
+                line = await self.bt.read_line()
+                if line:
+                    self.last_read_time = time.time()
+                    data = parse_telemetry(line)
+                    self.update_dashboard(data)
+            except Exception as e:
+                with open("tui_log.txt", "a") as f:
+                    f.write(f"Error en receive_loop: {e}\n")
+                await asyncio.sleep(0.1)
 
     def get_screen_safe(self, name: str, class_type):
         # Primero intentamos obtener la pantalla por su nombre registrado
