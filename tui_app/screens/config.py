@@ -204,6 +204,8 @@ class ConfigScreen(Screen):
                     self.app.bt_send(f"SET_DWELL 1 {dwell}")
                     await asyncio.sleep(0.2)
                     self.app.bt_send(f"SET_DIST 1 {dist}")
+                    await asyncio.sleep(0.2)
+                    self.app.bt_send(f"SERVO 1 {home}")
                     self.app.notify("Parámetros de Servo 1 guardados exitosamente")
                 
                 asyncio.create_task(run_save())
@@ -229,6 +231,8 @@ class ConfigScreen(Screen):
                     self.app.bt_send(f"SET_DWELL 2 {dwell}")
                     await asyncio.sleep(0.2)
                     self.app.bt_send(f"SET_DIST 2 {dist}")
+                    await asyncio.sleep(0.2)
+                    self.app.bt_send(f"SERVO 2 {home}")
                     self.app.notify("Parámetros de Servo 2 guardados exitosamente")
                 
                 asyncio.create_task(run_save())
