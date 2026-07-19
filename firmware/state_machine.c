@@ -35,6 +35,22 @@ static void u32_to_str(char *buf, uint32_t val) {
     for (uint8_t j = 0; j < i; j++) buf[j] = tmp[i - 1 - j];
     buf[i] = '\0';
 }
+#define ABS_DIFF(a, b) ((a) > (b) ? ((a) - (b)) : ((b) - (a)))
+
+static void adc_init(void) {
+    ADCON1 = 0x0E;          // AN0 (RA0) analog, others digital
+    TRISAbits.TRISA0 = 1;   // RA0 input
+    ADCON0 = 0x01;          // Select AN0, ADC ON
+    ADCON2 = 0xA5;          // Right justified, 8 TAD, FOSC/16
+}
+
+static uint16_t adc_read_an0(void) {
+    ADCON0bits.GO = 1;      // Start conversion
+    while (ADCON0bits.GO);  // Wait for it to finish
+    return ((uint16_t)ADRESH << 8) | ADRESL;
+}
+
+static uint8_t last_adc_val = 0;
 
 static state_t state = ST_IDLE;
 static uint8_t motor_speed = 0;
@@ -58,6 +74,7 @@ void state_machine_set_speed(uint8_t speed) {
     if (state == ST_RUNNING || state == ST_SORTING || state == ST_TEST) {
         pwm_hbridge_set_duty(motor_speed ? motor_speed : 180);
     }
+    last_adc_val = (uint8_t)(adc_read_an0() >> 2);
 }
 void state_machine_set_dist(uint8_t sid, uint16_t dist) {
     if (sid == 1) distance_s1_mm = dist;
@@ -67,6 +84,8 @@ void state_machine_set_dist(uint8_t sid, uint16_t dist) {
 void state_machine_init(void) {
     state = ST_IDLE;
     anti_jam_init();
+    adc_init();
+    last_adc_val = (uint8_t)(adc_read_an0() >> 2);
     distance_s1_mm = calibration_read_word(EEPROM_ADDR_SERVO1_DIST);
     if (distance_s1_mm == 0 || distance_s1_mm > 2000) distance_s1_mm = 200;
     distance_s2_mm = calibration_read_word(EEPROM_ADDR_SERVO2_DIST);
@@ -317,6 +336,17 @@ void state_machine_run(void) {
     INTCONbits.GIEL = 1;
 
     encoder_update_speed();
+
+    static uint32_t last_pot_check = 0;
+    if (now - last_pot_check >= 100) {
+        last_pot_check = now;
+        uint16_t adc = adc_read_an0();
+        uint8_t pot_speed = (uint8_t)(adc >> 2);
+        if (ABS_DIFF(pot_speed, last_adc_val) > 4) {
+            last_adc_val = pot_speed;
+            state_machine_set_speed(pot_speed);
+        }
+    }
 
     if (estop_triggered_by_button) {
         estop_triggered_by_button = 0;
