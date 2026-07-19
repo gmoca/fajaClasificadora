@@ -1,6 +1,6 @@
 from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal
-from textual.widgets import Static, Button, Input, Label
+from textual.widgets import Static, Button, Input, Label, TabbedContent, TabPane
 from textual.screen import Screen
 import asyncio
 
@@ -73,26 +73,63 @@ class ConfigScreen(Screen):
                     
                     with Vertical(classes="config-card"):
                         yield Static("Límites de Umbral de Color (EEPROM)", classes="card-title")
-                        with Horizontal(classes="config-row"):
-                            yield Label("ID (0=Rojo, 1=Verde, 2=Azul):")
-                            yield Input(placeholder="Ej: 0", id="inp-color-id")
-                        with Horizontal(classes="config-row"):
-                            yield Label("Rojo Min/Max:")
-                            yield Input(placeholder="Min", id="inp-color-r-min")
-                            yield Input(placeholder="Max", id="inp-color-r-max")
-                        with Horizontal(classes="config-row"):
-                            yield Label("Verde Min/Max:")
-                            yield Input(placeholder="Min", id="inp-color-g-min")
-                            yield Input(placeholder="Max", id="inp-color-g-max")
-                        with Horizontal(classes="config-row"):
-                            yield Label("Azul Min/Max:")
-                            yield Input(placeholder="Min", id="inp-color-b-min")
-                            yield Input(placeholder="Max", id="inp-color-b-max")
-                        with Horizontal(classes="config-row"):
-                            yield Label("Servo (0=Pasa, 1=S1, 2=S2):")
-                            yield Input(placeholder="Ej: 1", id="inp-color-servo")
-                        with Horizontal(classes="config-row"):
-                            yield Button("Guardar Umbrales en EEPROM", id="btn-save-color", variant="success")
+                        with TabbedContent():
+                            with TabPane("Rojo (ID 0)", id="tab-rojo"):
+                                with Horizontal(classes="config-row"):
+                                    yield Label("Rojo Min/Max:")
+                                    yield Input(placeholder="Min", id="inp-color-r-min-0")
+                                    yield Input(placeholder="Max", id="inp-color-r-max-0")
+                                with Horizontal(classes="config-row"):
+                                    yield Label("Verde Min/Max:")
+                                    yield Input(placeholder="Min", id="inp-color-g-min-0")
+                                    yield Input(placeholder="Max", id="inp-color-g-max-0")
+                                with Horizontal(classes="config-row"):
+                                    yield Label("Azul Min/Max:")
+                                    yield Input(placeholder="Min", id="inp-color-b-min-0")
+                                    yield Input(placeholder="Max", id="inp-color-b-max-0")
+                                with Horizontal(classes="config-row"):
+                                    yield Label("Servo (0=Pasa, 1=S1, 2=S2):")
+                                    yield Input(placeholder="Ej: 1", id="inp-color-servo-0")
+                                with Horizontal(classes="config-row"):
+                                    yield Button("Guardar Rojo en EEPROM", id="btn-save-color-0", variant="success")
+                            
+                            with TabPane("Verde (ID 1)", id="tab-verde"):
+                                with Horizontal(classes="config-row"):
+                                    yield Label("Rojo Min/Max:")
+                                    yield Input(placeholder="Min", id="inp-color-r-min-1")
+                                    yield Input(placeholder="Max", id="inp-color-r-max-1")
+                                with Horizontal(classes="config-row"):
+                                    yield Label("Verde Min/Max:")
+                                    yield Input(placeholder="Min", id="inp-color-g-min-1")
+                                    yield Input(placeholder="Max", id="inp-color-g-max-1")
+                                with Horizontal(classes="config-row"):
+                                    yield Label("Azul Min/Max:")
+                                    yield Input(placeholder="Min", id="inp-color-b-min-1")
+                                    yield Input(placeholder="Max", id="inp-color-b-max-1")
+                                with Horizontal(classes="config-row"):
+                                    yield Label("Servo (0=Pasa, 1=S1, 2=S2):")
+                                    yield Input(placeholder="Ej: 1", id="inp-color-servo-1")
+                                with Horizontal(classes="config-row"):
+                                    yield Button("Guardar Verde en EEPROM", id="btn-save-color-1", variant="success")
+                                    
+                            with TabPane("Azul (ID 2)", id="tab-azul"):
+                                with Horizontal(classes="config-row"):
+                                    yield Label("Rojo Min/Max:")
+                                    yield Input(placeholder="Min", id="inp-color-r-min-2")
+                                    yield Input(placeholder="Max", id="inp-color-r-max-2")
+                                with Horizontal(classes="config-row"):
+                                    yield Label("Verde Min/Max:")
+                                    yield Input(placeholder="Min", id="inp-color-g-min-2")
+                                    yield Input(placeholder="Max", id="inp-color-g-max-2")
+                                with Horizontal(classes="config-row"):
+                                    yield Label("Azul Min/Max:")
+                                    yield Input(placeholder="Min", id="inp-color-b-min-2")
+                                    yield Input(placeholder="Max", id="inp-color-b-max-2")
+                                with Horizontal(classes="config-row"):
+                                    yield Label("Servo (0=Pasa, 1=S1, 2=S2):")
+                                    yield Input(placeholder="Ej: 2", id="inp-color-servo-2")
+                                with Horizontal(classes="config-row"):
+                                    yield Button("Guardar Azul en EEPROM", id="btn-save-color-2", variant="success")
             
             with Horizontal(id="config-footer"):
                 yield Button("Volver al Dashboard", id="btn-back", variant="primary")
@@ -242,26 +279,23 @@ class ConfigScreen(Screen):
             except ValueError:
                 self.app.notify("Error: Rellene Home, Defl, Dwell y Dist para Servo 2", severity="error")
 
-        elif button_id == "btn-save-color":
+        elif button_id.startswith("btn-save-color-"):
             try:
-                idx = int(self.query_one("#inp-color-id", Input).value)
-                servo_id = int(self.query_one("#inp-color-servo", Input).value)
-                r_min = int(self.query_one("#inp-color-r-min", Input).value)
-                r_max = int(self.query_one("#inp-color-r-max", Input).value)
-                g_min = int(self.query_one("#inp-color-g-min", Input).value)
-                g_max = int(self.query_one("#inp-color-g-max", Input).value)
-                b_min = int(self.query_one("#inp-color-b-min", Input).value)
-                b_max = int(self.query_one("#inp-color-b-max", Input).value)
+                idx = int(button_id.split("-")[-1])
+                servo_id = int(self.query_one(f"#inp-color-servo-{idx}", Input).value)
+                r_min = int(self.query_one(f"#inp-color-r-min-{idx}", Input).value)
+                r_max = int(self.query_one(f"#inp-color-r-max-{idx}", Input).value)
+                g_min = int(self.query_one(f"#inp-color-g-min-{idx}", Input).value)
+                g_max = int(self.query_one(f"#inp-color-g-max-{idx}", Input).value)
+                b_min = int(self.query_one(f"#inp-color-b-min-{idx}", Input).value)
+                b_max = int(self.query_one(f"#inp-color-b-max-{idx}", Input).value)
                 
-                if 0 <= idx <= 2:
-                    if 0 <= servo_id <= 2:
-                        cmd = f"SET_THRESHOLD {idx} {r_min} {r_max} {g_min} {g_max} {b_min} {b_max} {servo_id}"
-                        self.app.bt_send(cmd)
-                        self.app.notify(f"Color {idx} guardado en EEPROM con Servo {servo_id}")
-                    else:
-                        self.app.notify("Error: Servo debe ser 0 (pasa), 1 o 2", severity="error")
+                if 0 <= servo_id <= 2:
+                    cmd = f"SET_THRESHOLD {idx} {r_min} {r_max} {g_min} {g_max} {b_min} {b_max} {servo_id}"
+                    self.app.bt_send(cmd)
+                    self.app.notify(f"Color {idx} guardado en EEPROM con Servo {servo_id}")
                 else:
-                    self.app.notify("Error: ID debe ser 0, 1 o 2", severity="error")
+                    self.app.notify("Error: Servo debe ser 0 (pasa), 1 o 2", severity="error")
             except ValueError:
                 self.app.notify("Error: Todos los campos de color deben ser números", severity="error")
 
