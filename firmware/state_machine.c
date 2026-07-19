@@ -427,15 +427,13 @@ void state_machine_run(void) {
                 
                 if (sorting_phase == 0) {
                     uint16_t speed = encoder_get_speed_mm_s();
-                    if (speed > 0) {
-                        uint32_t transit_ms = (uint32_t)distance_to_servo_mm * 1000 / speed;
-                        sorting_timeout = system_ticks + transit_ms;
-                        sorting_phase = 1;
-                    } else {
-                        // Speed is 0, abort sorting
-                        state = ST_RUNNING;
-                        sorting_phase = 0;
+                    if (speed == 0) {
+                        // fallback speed if encoder is disconnected or not registering (100 mm/s)
+                        speed = 100;
                     }
+                    uint32_t transit_ms = (uint32_t)distance_to_servo_mm * 1000 / speed;
+                    sorting_timeout = system_ticks + transit_ms;
+                    sorting_phase = 1;
                 }
                 
                 if (sorting_phase == 1) {
