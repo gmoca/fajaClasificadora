@@ -77,6 +77,16 @@ def parse_telemetry(line: str) -> dict:
     elif key in ("SERVO_CONFIG", "SERVO_CFG"):
         parts = val.split(",")
         return {"type": "SERVO_CONFIG", "servo": int(parts[0]) if parts else 0, "config": parts}
+    elif key == "THRESHOLD_CFG":
+        parts = val.split(",")
+        return {
+            "type": "THRESHOLD_CONFIG",
+            "idx": int(parts[0]),
+            "r_min": int(parts[1]), "r_max": int(parts[2]),
+            "g_min": int(parts[3]), "g_max": int(parts[4]),
+            "b_min": int(parts[5]), "b_max": int(parts[6]),
+            "servo_id": int(parts[7]) if len(parts) > 7 else 1
+        }
     elif key in ("ENCODER_COUNT", "ENC"):
         return {"type": "ENCODER_COUNT", "pulses": int(val)}
     elif key == "BEAM":

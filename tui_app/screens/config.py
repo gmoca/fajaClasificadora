@@ -158,6 +158,24 @@ class ConfigScreen(Screen):
         except Exception as e:
             self.app.notify(f"Error cargando servo {servo_id}: {e}", severity="error")
 
+    def update_color_config(self, data: dict) -> None:
+        try:
+            idx = data.get("idx")
+            if idx is None or not (0 <= idx <= 2):
+                return
+            self.query_one(f"#inp-color-r-min-{idx}", Input).value = str(data.get("r_min", 0))
+            self.query_one(f"#inp-color-r-max-{idx}", Input).value = str(data.get("r_max", 0))
+            self.query_one(f"#inp-color-g-min-{idx}", Input).value = str(data.get("g_min", 0))
+            self.query_one(f"#inp-color-g-max-{idx}", Input).value = str(data.get("g_max", 0))
+            self.query_one(f"#inp-color-b-min-{idx}", Input).value = str(data.get("b_min", 0))
+            self.query_one(f"#inp-color-b-max-{idx}", Input).value = str(data.get("b_max", 0))
+            self.query_one(f"#inp-color-servo-{idx}", Input).value = str(data.get("servo_id", 0))
+            
+            names = {0: "Rojo", 1: "Verde", 2: "Azul"}
+            self.app.notify(f"Configuración de Color {names.get(idx, idx)} cargada exitosamente")
+        except Exception as e:
+            self.app.notify(f"Error cargando color {idx}: {e}", severity="error")
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
         if button_id == "btn-back":
@@ -166,6 +184,9 @@ class ConfigScreen(Screen):
         elif button_id == "btn-load-config":
             self.app.bt_send("SERVO_GET_CONFIG 1")
             self.app.bt_send("SERVO_GET_CONFIG 2")
+            self.app.bt_send("GET_THRESHOLD 0")
+            self.app.bt_send("GET_THRESHOLD 1")
+            self.app.bt_send("GET_THRESHOLD 2")
             self.app.notify("Solicitando configuración al microcontrolador...")
             
         elif button_id == "btn-apply-speed":

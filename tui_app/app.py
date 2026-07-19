@@ -178,6 +178,14 @@ class FajaApp(App):
                     except Exception as e:
                         with open("tui_log.txt", "a") as f:
                             f.write(f"Error en TestScreen handle_servo_config: {e}\n")
+            elif t == "THRESHOLD_CONFIG":
+                cfg_scr = self.get_screen_safe("config", ConfigScreen)
+                if cfg_scr:
+                    try:
+                        cfg_scr.update_color_config(data)
+                    except Exception as e:
+                        with open("tui_log.txt", "a") as f:
+                            f.write(f"Error actualizando config screen threshold: {e}\n")
                     
             # agy: route breakbeams, button status, and color messages to TestScreen if mounted
             elif t in ("BEAM", "BEAM_MULTI", "BUTTONS", "BUTTON", "COLOR", "POLL_RESP"):

@@ -150,6 +150,52 @@ void bt_protocol_process(void) {
                 strcpy(cfg.name, "COLOR");
                 calibration_save_color(args[0], &cfg);
             }
+            else if (strncmp(cmd_buf, "GET_THRESHOLD ", 14) == 0) {
+                uint8_t idx = atoi(cmd_buf + 14);
+                color_config_t colors[3];
+                uint8_t num = calibration_load_all(colors, 3);
+                if (idx < num) {
+                    char buf[64];
+                    strcpy(buf, "THRESHOLD_CFG:");
+                    
+                    char num_buf[6];
+                    u16_to_str(num_buf, idx);
+                    strcat(buf, num_buf);
+                    strcat(buf, ",");
+                    
+                    u16_to_str(num_buf, colors[idx].r_min);
+                    strcat(buf, num_buf);
+                    strcat(buf, ",");
+                    
+                    u16_to_str(num_buf, colors[idx].r_max);
+                    strcat(buf, num_buf);
+                    strcat(buf, ",");
+                    
+                    u16_to_str(num_buf, colors[idx].g_min);
+                    strcat(buf, num_buf);
+                    strcat(buf, ",");
+                    
+                    u16_to_str(num_buf, colors[idx].g_max);
+                    strcat(buf, num_buf);
+                    strcat(buf, ",");
+                    
+                    u16_to_str(num_buf, colors[idx].b_min);
+                    strcat(buf, num_buf);
+                    strcat(buf, ",");
+                    
+                    u16_to_str(num_buf, colors[idx].b_max);
+                    strcat(buf, num_buf);
+                    strcat(buf, ",");
+                    
+                    u16_to_str(num_buf, colors[idx].servo_id);
+                    strcat(buf, num_buf);
+                    strcat(buf, "\n");
+                    
+                    uart_send_str(buf);
+                } else {
+                    uart_send_str("THRESHOLD_ERR\n");
+                }
+            }
             else if (strncmp(cmd_buf, "SERVO_SET ", 10) == 0) {
                 // Alias for SERVO
                 char *sp1 = strchr(cmd_buf + 10, ' ');
