@@ -369,6 +369,9 @@ agy completó su segunda ronda con:
   - **Firmware (bt_protocol.c):** Se implementó una rutina de seguridad al inicio de `bt_protocol_process()` que detecta si el bit de error de sobreflujo de hardware (`RCSTAbits.OERR`) está activo y lo limpia ciclando el receptor (`CREN = 0` y `CREN = 1`). Esto evita que el receptor UART del PIC se bloquee si llegan muchos bytes juntos.
   - **Comando Unificado `TEST_POLL`:** Se eliminaron las tres peticiones concurrentes individuales (`TEST_BEAM`, `TEST_BUTTON_ECHO`, `TEST_COLOR`) que saturaban el canal de transmisión. En su lugar se creó el comando unificado `TEST_POLL`. El PIC lee todos los sensores de una sola pasada y responde con una sola línea optimizada (`POLL_RESP:CC,000,r,g,b,c`).
   - **TUI (protocol.py, app.py, test_screen.py):** Se adaptó el flujo de datos para enviar únicamente `TEST_POLL` cada 200ms y parsear la respuesta en un solo bloque, reduciendo el tráfico serial en más de un 60% y eliminando retrasos de lectura.
+- **Velocidad de Emergencia del Encoder (Bypass de Velocidad 0 para Pruebas):**
+  - **Firmware (state_machine.c):** En la fase 0 del estado `ST_SORTING`, el sistema requiere medir una velocidad del motor mayor a 0 para calcular el retraso de arribo de la pieza al servo (`transit_ms`). Si el encoder está desconectado físicamente o no registra pulsos, la velocidad medida es 0, lo que provocaba un aborto inmediato volviendo a `ST_RUNNING` en la misma tarea. Se programó un fallback: si la velocidad del encoder es 0, el software asume una velocidad fija por defecto de `100` mm/s, permitiendo completar el ciclo de clasificación y mover los servos para pruebas de clasificación automática.
+
 
 
 

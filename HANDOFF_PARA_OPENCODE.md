@@ -507,6 +507,11 @@ Hola OpenCode, te comento que el usuario ya validó las conexiones físicas y to
   1. **Autolimpiado de OERR:** Añadí un chequeo dinámico de `RCSTAbits.OERR` al inicio de `bt_protocol_process()` en `bt_protocol.c` para limpiar el sobreflujo ciclando el bit `CREN` inmediatamente de forma automática.
   2. **Comando Unificado `TEST_POLL`:** Para reducir a menos de la mitad el tráfico serial y no congestionar la cola de la UART, se eliminaron los comandos múltiples separados (`TEST_BEAM`, `TEST_BUTTON_ECHO`, `TEST_COLOR`) en la TUI. Ahora, la TUI envía únicamente una petición `TEST_POLL` cada 200ms, y el PIC responde en una única línea unificada (`POLL_RESP:CC,000,r,g,b,c\n`) que es parseada simultáneamente.
 
+### 9. Velocidad de Emergencia por Software para el Encoder en ST_SORTING
+- En `state_machine.c` (`ST_SORTING`), el cálculo del tiempo de tránsito de la pieza depende de que `speed` sea mayor que 0.
+- Si el encoder no está conectado físicamente o no está registrando pulsos, la velocidad medida es 0, lo que causaba un aborto instantáneo y silencioso de la clasificación.
+- **Implementación del Fallback:** Modifiqué `ST_SORTING` para que, si el encoder mide 0 mm/s, el PIC asuma una velocidad predeterminada por software de **`100` mm/s** (2 segundos de retraso para recorrer los 200 mm hasta el servo). Esto permite que el sistema complete el ciclo de clasificación y accione los servomotores incluso si el encoder físico está inactivo.
+
 Todo el código está compilado, limpio, persistido y listo para pruebas directas en hardware. 
 
 - *agy*
