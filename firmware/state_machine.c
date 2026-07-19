@@ -428,9 +428,10 @@ void state_machine_run(void) {
                         tcs34725_get_raw(&color);
                         int8_t idx = color_match_index(&color);
                         if (idx >= 0) {
-                            state = ST_SORTING;
-                            sorting_phase = 0;
-                            sorting_servo_id = (idx == 2) ? 2 : 1;
+                            color_config_t colors[3];
+                            uint8_t num_colors = calibration_load_all(colors, 3);
+                            uint8_t sid = (idx < num_colors) ? colors[idx].servo_id : 0;
+                            
                             char buf[32];
                             strcpy(buf, "DETECT:");
                             char idx_str[4];
@@ -442,6 +443,12 @@ void state_machine_run(void) {
                             lcd_set_cursor(0, 1);
                             lcd_print("Detectado: ");
                             lcd_print(idx_str);
+                            
+                            if (sid == 1 || sid == 2) {
+                                state = ST_SORTING;
+                                sorting_phase = 0;
+                                sorting_servo_id = sid;
+                            }
                         }
                     }
                 }

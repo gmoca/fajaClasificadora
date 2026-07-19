@@ -131,11 +131,13 @@ void bt_protocol_process(void) {
                 state_machine_set_spacing(space);
             }
             else if (strncmp(cmd_buf, "SET_THRESHOLD ", 14) == 0) {
-                // Format: SET_THRESHOLD <idx> <r_min> <r_max> <g_min> <g_max> <b_min> <b_max>
-                int args[7];
+                // Format: SET_THRESHOLD <idx> <r_min> <r_max> <g_min> <g_max> <b_min> <b_max> [servo_id]
+                int args[8];
+                uint8_t num_args = 0;
                 char *ptr = cmd_buf + 14;
-                for (int i=0; i<7; i++) {
+                for (int i=0; i<8; i++) {
                     args[i] = atoi(ptr);
+                    num_args++;
                     ptr = strchr(ptr, ' ');
                     if (!ptr) break;
                     ptr++;
@@ -144,6 +146,8 @@ void bt_protocol_process(void) {
                 cfg.r_min = args[1]; cfg.r_max = args[2];
                 cfg.g_min = args[3]; cfg.g_max = args[4];
                 cfg.b_min = args[5]; cfg.b_max = args[6];
+                cfg.servo_id = (num_args >= 8) ? (uint8_t)args[7] : 1;
+                strcpy(cfg.name, "COLOR");
                 calibration_save_color(args[0], &cfg);
             }
             else if (strncmp(cmd_buf, "SERVO_SET ", 10) == 0) {

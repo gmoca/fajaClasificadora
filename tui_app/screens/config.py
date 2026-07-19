@@ -89,6 +89,9 @@ class ConfigScreen(Screen):
                             yield Input(placeholder="Min", id="inp-color-b-min")
                             yield Input(placeholder="Max", id="inp-color-b-max")
                         with Horizontal(classes="config-row"):
+                            yield Label("Servo (0=Pasa, 1=S1, 2=S2):")
+                            yield Input(placeholder="Ej: 1", id="inp-color-servo")
+                        with Horizontal(classes="config-row"):
                             yield Button("Guardar Umbrales en EEPROM", id="btn-save-color", variant="success")
             
             with Horizontal(id="config-footer"):
@@ -242,6 +245,7 @@ class ConfigScreen(Screen):
         elif button_id == "btn-save-color":
             try:
                 idx = int(self.query_one("#inp-color-id", Input).value)
+                servo_id = int(self.query_one("#inp-color-servo", Input).value)
                 r_min = int(self.query_one("#inp-color-r-min", Input).value)
                 r_max = int(self.query_one("#inp-color-r-max", Input).value)
                 g_min = int(self.query_one("#inp-color-g-min", Input).value)
@@ -250,9 +254,12 @@ class ConfigScreen(Screen):
                 b_max = int(self.query_one("#inp-color-b-max", Input).value)
                 
                 if 0 <= idx <= 2:
-                    cmd = f"SET_THRESHOLD {idx} {r_min} {r_max} {g_min} {g_max} {b_min} {b_max}"
-                    self.app.bt_send(cmd)
-                    self.app.notify(f"Color {idx} guardado exitosamente en EEPROM")
+                    if 0 <= servo_id <= 2:
+                        cmd = f"SET_THRESHOLD {idx} {r_min} {r_max} {g_min} {g_max} {b_min} {b_max} {servo_id}"
+                        self.app.bt_send(cmd)
+                        self.app.notify(f"Color {idx} guardado en EEPROM con Servo {servo_id}")
+                    else:
+                        self.app.notify("Error: Servo debe ser 0 (pasa), 1 o 2", severity="error")
                 else:
                     self.app.notify("Error: ID debe ser 0, 1 o 2", severity="error")
             except ValueError:

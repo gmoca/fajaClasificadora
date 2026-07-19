@@ -21,7 +21,8 @@
 
 typedef struct {
     uint16_t r_min, r_max, g_min, g_max, b_min, b_max;
-    char name[12];
+    uint8_t servo_id;
+    char name[11];
 } color_config_t;
 
 void calibration_init(void);
